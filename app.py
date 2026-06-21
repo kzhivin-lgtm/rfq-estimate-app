@@ -277,6 +277,11 @@ def render_upload_screen(company_id=None):
 
     st.markdown(
         """
+        <!-- HERO_ARCHIVO_FONT_LINKS_V1 -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
 
@@ -294,9 +299,12 @@ def render_upload_screen(company_id=None):
             .landing-hero-line-1-v2,
             .landing-hero-line-2-v2 {
                 font-family: "Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif;
-                font-weight: 900;
+                font-weight: 400;
+                font-synthesis: none;
                 letter-spacing: -0.045em;
                 text-align: center;
+                -webkit-font-smoothing: antialiased;
+                text-rendering: geometricPrecision;
             }
 
             .landing-hero-line-1-v2 {
