@@ -4,3 +4,4 @@ streamlit-aggrid
 reportlab>=4.0
 supabase
 python-dotenv
+anthropic

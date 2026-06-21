@@ -1,6 +1,15 @@
 from __future__ import annotations
+from pathlib import Path
 
 import pandas as pd
+import json
+import re
+
+import math
+import time
+
+from concurrent.futures import ThreadPoolExecutor
+
 import streamlit as st
 
 from agents.detection_agent import run_detection_agent
@@ -30,6 +39,9 @@ apply_css()
 def get_company_id() -> str:
     return st.secrets.get("COMPANY_ID", "001")
 
+def get_detection_agent_mode() -> str:
+    return str(st.secrets.get("DETECTION_AGENT_MODE", "mock")).strip().lower()
+
 
 def init_state():
     if "screen" not in st.session_state:
@@ -40,6 +52,9 @@ def init_state():
 
     if "uploaded_file_name" not in st.session_state:
         st.session_state.uploaded_file_name = None
+
+    if "uploaded_file_bytes" not in st.session_state:
+        st.session_state.uploaded_file_bytes = None
 
 
 def go_to(screen: str):
@@ -57,60 +72,497 @@ def load_company_data_cached(company_id: str):
 # Product flow
 # -----------------------------------------------------------------------------
 
-def render_upload_screen(company_id: str):
-    st.title("Drop or Upload")
-    st.caption("Upload an RFQ package to start object detection and file quality review.")
 
-    uploaded_file = st.file_uploader(
-        "Upload RFQ file",
-        type=["pdf", "png", "jpg", "jpeg", "dwg", "dxf", "xlsx", "csv"],
+# COMMON_POST_UPLOAD_LAYOUT_V1
+def apply_post_upload_layout_css() -> None:
+    st.markdown(
+        """
+<style>
+:root {
+    --post-upload-width: min(960px, calc(100vw - 56px));
+    --post-upload-top: 88px;
+}
+
+html,
+body,
+.stApp,
+div[data-testid="stAppViewContainer"],
+section.main {
+    background: #F1EFEF !important;
+}
+
+/* Canonical layout for all screens after Upload. */
+.block-container {
+    width: var(--post-upload-width) !important;
+    max-width: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-top: var(--post-upload-top) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 72px !important;
+    background: #F1EFEF !important;
+}
+
+/* Upload screen remains its own centered exception. */
+.stApp:has(.upload-screen-active) .block-container {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+}
+
+.post-upload-title {
+    font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
+    color: #8049C6 !important;
+    font-size: 40px !important;
+    line-height: 1.1 !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 var(--s5) 0 !important;
+    padding: 0 !important;
+}
+
+.post-upload-subtitle {
+    color: var(--ink-500, rgba(0, 0, 0, 0.52)) !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    margin: calc(-1 * var(--s3, 16px)) 0 var(--s5, 32px) 0 !important;
+    max-width: 760px !important;
+}
+
+.custom-progress-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #D85A5A;
+    overflow: hidden;
+}
+
+.custom-progress-fill {
+    height: 100%;
+    min-width: 0;
+    border-radius: 999px;
+    background: #8049C6;
+    transition: width 140ms linear;
+}
+
+.custom-progress-fill.is-running {
+    background: linear-gradient(
+        90deg,
+        #8049C6 0%,
+        #9A65DF 52%,
+        #8049C6 100%
+    );
+}
+
+/* White object-card substrate for File Review and later pages. */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid rgba(42, 31, 44, 0.14) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.055) !important;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"] > div {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border-radius: 16px !important;
+}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_post_upload_header(title: str, subtitle: str | None = None) -> None:
+    apply_post_upload_layout_css()
+
+    st.markdown(
+        f"<h1 class='post-upload-title'>{title}</h1>",
+        unsafe_allow_html=True,
+    )
+
+    if subtitle:
+        st.markdown(
+            f"<div class='post-upload-subtitle'>{subtitle}</div>",
+            unsafe_allow_html=True,
+        )
+
+
+
+def detect_uploaded_file_type(file_name: str) -> str:
+    """Return a simple file type label for uploaded RFQ packages."""
+    suffix = Path(file_name).suffix.lower().lstrip(".")
+
+    if suffix == "pdf":
+        return "pdf"
+    if suffix in {"xlsx", "xls", "csv"}:
+        return "spreadsheet"
+    if suffix in {"png", "jpg", "jpeg"}:
+        return "image"
+    if suffix in {"dwg", "dxf"}:
+        return "cad"
+
+    return suffix or "unknown"
+
+
+# First screen: minimal RFQ package upload.
+def render_upload_screen(company_id=None):
+    st.markdown(
+        """
+        <style>
+        .stApp:has(.upload-screen-active) .block-container {
+            height: 100vh !important;
+            max-height: 100vh !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .stApp:has(.upload-screen-active) .block-container > div {
+            height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            transform: translateY(-40px) !important;
+        }
+
+        html, body {
+            height: 100% !important;
+            overflow: hidden !important;
+        }
+
+        .stApp,
+        div[data-testid="stAppViewContainer"],
+        section.main {
+            height: 100vh !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
+        }
+
+        .block-container {
+            height: 100vh !important;
+            max-height: 100vh !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+        }
+
+        .landing-title {
+            text-align: center;
+            font-size: 64px;
+            line-height: 1.05;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin: 150px 0 72px 0;
+            color: var(--orange);
+        }
+
+        div[data-testid="stFileUploader"] {
+            flex: 0 0 auto !important;
+        }
+        </style>
+
+        <div class="upload-screen-active" style="display:none"></div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="landing-title">
+            RFQ to Estimate to Proposal
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    upload_slot = st.empty()
+
+    uploaded_file = upload_slot.file_uploader(
+        "📎 DROP OR UPLOAD",
+        type=["pdf"],
         label_visibility="collapsed",
     )
 
-    if uploaded_file:
-        st.session_state.uploaded_file_name = uploaded_file.name
-        st.success(f"File selected: {uploaded_file.name}")
+    if uploaded_file is not None:
+        # Remove uploader immediately so Streamlit's post-drop visual state
+        # does not flash or remain visible before processing starts.
+        upload_slot.empty()
+        file_bytes = uploaded_file.getvalue()
 
-    file_name = st.session_state.get("uploaded_file_name") or "RA-N01_20260216.pdf"
+        st.session_state.uploaded_file = uploaded_file
+        st.session_state.uploaded_filename = uploaded_file.name
+        st.session_state.uploaded_file_size = uploaded_file.size
+        st.session_state.uploaded_file_type = detect_uploaded_file_type(uploaded_file.name)
+        st.session_state.uploaded_file_bytes = file_bytes
 
-    st.text_input(
-        "RFQ file name",
-        value=file_name,
-        key="manual_file_name",
+
+        for key in [
+            "processing_completed",
+            "processing_error",
+            "detection_result",
+            "current_run_id",
+        ]:
+            st.session_state.pop(key, None)
+
+        st.session_state.screen = "processing"
+        st.rerun()
+
+
+
+
+
+
+
+
+
+def render_processing_screen(company_id: str | None = None):
+    # Same layout system as File Review / Objects / Object Detail.
+    # No fixed overlay. No separate coordinate system.
+    if st.session_state.get("processing_completed"):
+        render_file_review_screen(company_id)
+        return
+
+    render_post_upload_header(
+        "Reading your RFQ package",
+        "AI Detection is analyzing the uploaded file and detecting estimate-scope objects.",
     )
 
-    if st.button("Prepare object detection", type="primary"):
-        st.session_state.uploaded_file_name = st.session_state.manual_file_name
-        go_to("processing")
+    progress_slot = st.empty()
 
+    def render_progress(progress_value: float) -> None:
+        value = max(0.0, min(1.0, float(progress_value)))
+        width = round(value * 100, 1)
 
-def render_processing_screen(company_id: str):
-    st.title("Preparing object estimates")
-    st.caption("Running Detection Agent v1.")
-
-    file_name = st.session_state.get("uploaded_file_name") or "RA-N01_20260216.pdf"
-
-    with st.spinner("Detecting RFQ metadata, file quality and objects..."):
-        client = get_supabase_client()
-
-        detection_result = run_detection_agent(
-            file_name=file_name,
-            company_id=company_id,
+        progress_slot.markdown(
+            f"<div class='custom-progress-track'>"
+            f"<div class='custom-progress-fill is-running' style='width:{width}%;'></div>"
+            f"</div>",
+            unsafe_allow_html=True,
         )
 
-        upsert_rfq_detection_result(client, detection_result)
+    try:
+        render_progress(0.04)
 
-        run_id = detection_result["rfq_run"]["run_id"]
+        file_name = st.session_state.get("uploaded_filename")
+        file_bytes = st.session_state.get("uploaded_file_bytes")
+
+        if not file_name:
+            st.session_state.screen = "upload"
+            st.rerun()
+
+        if not file_bytes:
+            uploaded_file = st.session_state.get("uploaded_file")
+            if uploaded_file is not None:
+                file_bytes = uploaded_file.getvalue()
+                st.session_state.uploaded_file_bytes = file_bytes
+
+        if not file_bytes:
+            st.session_state.screen = "upload"
+            st.rerun()
+
+        active_company_id = company_id or st.secrets.get("COMPANY_ID", "001")
+
+        # Fast local preparation zone.
+        render_progress(0.12)
+
+        # Soft-progress zone during the black-box Claude call.
+        # Only the agent call runs in the background thread.
+        start_time = time.time()
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                run_detection_agent,
+                file_name=file_name,
+                company_id=active_company_id,
+                file_bytes=file_bytes,
+            )
+
+            while not future.done():
+                elapsed = time.time() - start_time
+
+                # Smoothly approaches 88%, but never reaches completion before Claude returns.
+                soft_value = 0.12 + 0.76 * (1 - math.exp(-elapsed / 18))
+                soft_value = min(soft_value, 0.88)
+
+                render_progress(soft_value)
+                time.sleep(0.15)
+
+            detection_result = future.result()
+
+        # Real post-processing zone.
+        render_progress(0.90)
+
+        if not isinstance(detection_result, dict):
+            raise RuntimeError("Detection agent returned an invalid result.")
+
+        rfq_run = detection_result.get("rfq_run") or {}
+        run_id = rfq_run.get("run_id")
+
+        if not run_id:
+            raise RuntimeError("Detection result does not contain rfq_run.run_id.")
+
+        st.session_state.detection_result = detection_result
         st.session_state.current_run_id = run_id
 
-    st.success(f"Detection completed: {st.session_state.current_run_id}")
+        render_progress(0.94)
 
-    if st.button("Review detected file", type="primary"):
-        go_to("file_review")
+        client = get_supabase_client()
+        upsert_rfq_detection_result(client, detection_result)
+
+        render_progress(1.0)
+
+        st.session_state.processing_completed = True
+
+        time.sleep(0.25)
+        st.rerun()
+
+    except Exception as exc:
+        st.session_state.processing_error = str(exc)
+        st.error(str(exc))
+
+        if st.button("Back to upload"):
+            st.session_state.screen = "upload"
+            st.rerun()
+
+
+def _is_empty_value(value) -> bool:
+    if value is None:
+        return True
+
+    try:
+        if pd.isna(value):
+            return True
+    except Exception:
+        pass
+
+    text = str(value).strip()
+    return text == "" or text.lower() in {"none", "unknown", "nan", "null", "-"}
+
+
+def split_text_to_points(value) -> list[str]:
+    if _is_empty_value(value):
+        return []
+
+    text = str(value).strip()
+
+    text = text.replace("•", "\n")
+    text = text.replace("; ", "\n")
+    text = text.replace(";", "\n")
+
+    raw_parts = []
+    for line in text.splitlines():
+        line = line.strip(" \t-•")
+        if not line:
+            continue
+
+        parts = re.split(r"(?<=[.!?])\s+(?=[A-ZА-Яא-ת0-9])", line)
+        raw_parts.extend(parts)
+
+    points = []
+    for part in raw_parts:
+        part = part.strip(" \t-•.;")
+        if part and part.lower() not in {"none", "unknown"}:
+            points.append(part)
+
+    return points
+
+
+def render_bullets(value, empty_text: str = "No major missing information detected.") -> None:
+    points = split_text_to_points(value)
+
+    if not points:
+        st.caption(empty_text)
+        return
+
+    for point in points:
+        st.markdown(f"- {point}")
+
+
+def format_confidence(value) -> str:
+    if _is_empty_value(value):
+        return "—"
+
+    try:
+        return f"{float(value):.0f}%"
+    except Exception:
+        return str(value)
+
+
+def format_quantity(row) -> str:
+    quantity = row.get("quantity", 1)
+    quantity_confidence = row.get("quantity_confidence", 0)
+
+    try:
+        q = float(quantity)
+        q_text = str(int(q)) if q.is_integer() else str(round(q, 2))
+    except Exception:
+        q_text = str(quantity)
+
+    try:
+        qc = float(quantity_confidence)
+    except Exception:
+        qc = 0
+
+    return f"{q_text}?" if qc < 70 else q_text
+
+
+def _parse_dimensions(value) -> dict:
+    if isinstance(value, dict):
+        return value
+
+    if _is_empty_value(value):
+        return {}
+
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            return {}
+
+    return {}
+
+
+def _dimension_part(label: str, value) -> str:
+    try:
+        number = float(value)
+        if number <= 0:
+            return f"{label} ?"
+        if number.is_integer():
+            return f"{label} {int(number)}"
+        return f"{label} {round(number, 1)}"
+    except Exception:
+        return f"{label} ?"
+
+
+def format_dimensions(value) -> str:
+    dimensions = _parse_dimensions(value)
+
+    width = dimensions.get("width", 0)
+    depth = dimensions.get("depth", 0)
+    height = dimensions.get("height", 0)
+    unit = dimensions.get("unit", "mm")
+
+    if _is_empty_value(unit):
+        unit = "mm"
+
+    return (
+        f"{_dimension_part('W', width)} × "
+        f"{_dimension_part('D', depth)} × "
+        f"{_dimension_part('H', height)} {unit}"
+    )
 
 
 def render_file_review_screen(company_id: str):
-    st.title("File Review")
+    render_post_upload_header("File Review")
 
     client = get_supabase_client()
     run_id = st.session_state.get("current_run_id") or "RA-N01_run_001"
@@ -126,54 +578,69 @@ def render_file_review_screen(company_id: str):
 
     run = run_df.iloc[0].to_dict()
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     col1.metric("Project", run.get("project_name", "—"))
     col2.metric("Pages", run.get("pages_detected", 0))
     col3.metric("File quality", run.get("file_quality_label", "—"))
-    col4.metric("Confidence", f"{run.get('file_quality_confidence', 0)}%")
 
-    st.subheader("Detected metadata")
+    st.divider()
 
-    metadata_rows = [
-        ("Project name", run.get("project_name", "—")),
-        ("File name", run.get("file_name", "—")),
-        ("Source type", run.get("source_type", "—")),
-        ("Design partner", run.get("client_or_design_partner", "—")),
-        ("Author", run.get("author", "—")),
-        ("Document date", run.get("document_date", "—")),
-        ("Language", run.get("language", "—")),
-        ("Missing information", run.get("missing_information", "—")),
-    ]
-
-    st.dataframe(
-        pd.DataFrame(metadata_rows, columns=["Field", "Value"]),
-        use_container_width=True,
-        hide_index=True,
+    st.subheader("Missing information")
+    render_bullets(
+        run.get("missing_information", "none"),
+        empty_text="No major missing information detected.",
     )
+
+    with st.expander("Technical metadata", expanded=False):
+        metadata_rows = [
+            ("Project name", run.get("project_name", "—")),
+            ("File name", run.get("file_name", "—")),
+            ("Source type", run.get("source_type", "—")),
+            ("Design partner", run.get("client_or_design_partner", "—")),
+            ("Author", run.get("author", "—")),
+            ("Document date", run.get("document_date", "—")),
+            ("Language", run.get("language", "—")),
+            ("File quality confidence", format_confidence(run.get("file_quality_confidence", 0))),
+            ("Run ID", run.get("run_id", "—")),
+            ("Status", run.get("status", "—")),
+        ]
+
+        st.dataframe(
+            pd.DataFrame(metadata_rows, columns=["Field", "Value"]),
+            width="stretch",
+            hide_index=True,
+        )
+
+    st.divider()
 
     st.subheader("Detected objects")
 
     if objects_df.empty:
         st.warning("No objects detected.")
     else:
-        visible_cols = [
-            "object_id",
-            "object_name",
-            "quantity",
-            "confidence",
-            "evidence_pages",
-            "detected_materials",
-            "dimensions_json",
-            "notes",
-        ]
-        existing_cols = [col for col in visible_cols if col in objects_df.columns]
+        for _, row in objects_df.iterrows():
+            with st.container(border=True):
+                top_left, top_mid, top_right = st.columns([5, 1, 1])
 
-        st.dataframe(
-            objects_df[existing_cols],
-            use_container_width=True,
-            hide_index=True,
-            height=300,
-        )
+                top_left.subheader(row.get("object_name", "Unknown object"))
+                top_mid.metric("Qty", format_quantity(row))
+                top_right.metric("Confidence", format_confidence(row.get("confidence", 0)))
+
+                dim_col, mat_col = st.columns([2, 3])
+
+                with dim_col:
+                    st.caption("Dimensions")
+                    st.write(format_dimensions(row.get("dimensions_json", {})))
+
+                with mat_col:
+                    st.caption("Materials")
+                    materials = row.get("detected_materials", "unknown")
+                    st.write("—" if _is_empty_value(materials) else materials)
+
+                notes = row.get("notes", "none")
+                if not _is_empty_value(notes):
+                    st.caption("Notes")
+                    render_bullets(notes, empty_text="—")
 
     col_back, col_next = st.columns(2)
 
@@ -182,7 +649,6 @@ def render_file_review_screen(company_id: str):
 
     if col_next.button("Continue to objects", type="primary"):
         go_to("objects")
-
 
 def render_objects_screen(company_id: str):
     st.title("Detected Objects")
@@ -274,13 +740,27 @@ def render_detection_agent_dev(company_id: str):
         key="detection_file_name_dev",
     )
 
+    dev_uploaded_file = st.file_uploader(
+        "Optional PDF for real Anthropic detection",
+        type=["pdf"],
+        key="detection_file_dev_upload",
+    )
+
     client = get_supabase_client()
 
     if st.button("Run Detection Agent", type="primary"):
-        detection_result = run_detection_agent(
-            file_name=file_name,
-            company_id=company_id,
-        )
+        if dev_uploaded_file is not None:
+            detection_result = run_detection_agent(
+                file_name=dev_uploaded_file.name,
+                company_id=company_id,
+                file_bytes=dev_uploaded_file.getvalue(),
+            )
+        else:
+            detection_result = run_detection_agent(
+                file_name=file_name,
+                company_id=company_id,
+                file_bytes=None,
+            )
 
         upsert_rfq_detection_result(client, detection_result)
 
@@ -316,6 +796,8 @@ def render_detection_agent_dev(company_id: str):
         "object_id",
         "object_name",
         "quantity",
+        "quantity_explicit",
+        "quantity_confidence",
         "confidence",
         "evidence_pages",
         "detected_materials",

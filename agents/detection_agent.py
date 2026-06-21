@@ -2,8 +2,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from agents.anthropic_adapter import run_anthropic_detection_agent_with_fallback
 from agents.prompt_loader import load_detection_agent_prompt
 from agents.schemas.detection_schema import validate_detection_result
+
+
+def get_secret(name: str, default: str | None = None) -> str | None:
+    try:
+        import streamlit as st
+
+        if name in st.secrets:
+            return str(st.secrets[name])
+    except Exception:
+        pass
+
+    return default
 
 
 def build_run_id(project_name: str) -> str:
@@ -129,24 +142,46 @@ def build_mock_detection_result(file_name: str, company_id: str = "001") -> dict
     }
 
 
-def run_detection_agent(file_name: str, company_id: str = "001") -> dict:
+def run_detection_agent(
+    file_name: str,
+    company_id: str = "001",
+    file_bytes: bytes | None = None,
+) -> dict:
     """
-    Detection Agent v1.
+    Detection Agent entrypoint.
 
-    Current behavior:
-    - loads the real prompt file, so missing/broken prompt fails loudly;
-    - returns deterministic mock output;
-    - validates output against the detection schema before Supabase write.
-
-    Later replacement:
-    - keep this function signature;
-    - replace build_mock_detection_result(...) with a real model adapter call;
-    - keep validate_detection_result(...) at the end.
+    Modes:
+    - mock: deterministic local mock, no API cost
+    - anthropic: real Claude API call, requires file_bytes
     """
 
-    # This intentionally fails if the prompt file is missing or empty.
-    # Even in mock mode, the app now depends on the prompt existing.
+    # Fail loudly if the prompt file is missing or empty.
     _prompt = load_detection_agent_prompt()
 
-    result = build_mock_detection_result(file_name=file_name, company_id=company_id)
-    return validate_detection_result(result)
+    mode = get_secret("DETECTION_AGENT_MODE", "mock") or "mock"
+    mode = mode.strip().lower()
+
+    if mode == "mock":
+        result = build_mock_detection_result(
+            file_name=file_name,
+            company_id=company_id,
+        )
+        return validate_detection_result(result)
+
+    if mode == "anthropic":
+        if file_bytes is None:
+            raise ValueError(
+                "DETECTION_AGENT_MODE='anthropic' requires file_bytes. "
+                "Pass uploaded_file.getvalue() from Streamlit."
+            )
+
+        return run_anthropic_detection_agent_with_fallback(
+            file_name=file_name,
+            company_id=company_id,
+            file_bytes=file_bytes,
+        )
+
+    raise ValueError(
+        f"Unknown DETECTION_AGENT_MODE={mode!r}. "
+        "Expected 'mock' or 'anthropic'."
+    )

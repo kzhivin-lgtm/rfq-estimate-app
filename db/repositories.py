@@ -58,15 +58,23 @@ def upsert_rfq_detection_result(client: Client, detection_result: dict) -> None:
     rfq_run = detection_result["rfq_run"]
     detected_objects = detection_result["detected_objects"]
 
+    run_id = rfq_run["run_id"]
+
     client.table("rfq_runs").upsert(
         rfq_run,
         on_conflict="run_id",
     ).execute()
 
-    client.table("rfq_detected_objects").upsert(
-        detected_objects,
-        on_conflict="run_id,object_id",
+    client.table("rfq_detected_objects").delete().eq(
+        "run_id",
+        run_id,
     ).execute()
+
+    if detected_objects:
+        client.table("rfq_detected_objects").upsert(
+            detected_objects,
+            on_conflict="run_id,object_id",
+        ).execute()
 
 
 def fetch_rfq_run(client: Client, run_id: str) -> pd.DataFrame:
