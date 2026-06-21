@@ -25,11 +25,12 @@ from engine.routing import select_routes
 from engine.estimate_engine import calculate_work_hours
 from styles import apply_css
 import os
+import textwrap
 
 
 st.set_page_config(
-    page_title="RFQ Estimate App",
-    page_icon="📐",
+    page_title="costerly.ai",
+    page_icon="/Users/qb/rfq-estimate-app/assets/brand/costelry_mark_cherry.svg",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -276,12 +277,63 @@ def render_upload_screen(company_id=None):
 
     st.markdown(
         """
-        <div class="landing-title">
-            RFQ to Estimate to Proposal
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+
+            .landing-hero-v2 {
+                width: 100%;
+                max-width: 1040px;
+                margin: -20px auto 28px auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .landing-hero-line-1-v2,
+            .landing-hero-line-2-v2 {
+                font-family: "Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+                font-weight: 900;
+                letter-spacing: -0.045em;
+                text-align: center;
+            }
+
+            .landing-hero-line-1-v2 {
+                color: #3B2E48;
+                font-size: 46px;
+                line-height: 1.18;
+                margin-top: 14px;
+                margin-bottom: 36px;
+            }
+
+            .landing-hero-line-2-v2 {
+                color: #3B2E48;
+                font-size: 46px;
+                line-height: 1.18;
+                margin-bottom: 36px;
+            }
+
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="landing-hero-v2">', unsafe_allow_html=True)
+    st.image("assets/brand/costelry_logo_full.svg", width=323)
+
+    st.markdown(
+        """
+        <div class="landing-hero-line-1-v2">
+            AI estimating.<br>
+            From quote request<br>
+            to proposal in minutes, not days
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
         "📎 DROP OR UPLOAD",

@@ -5,6 +5,8 @@ def apply_css():
     st.markdown(
         r'''
         <style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
         /* ------------------------------------------------------------------
@@ -79,7 +81,7 @@ def apply_css():
             color-scheme: light;
         }
 
-        @media (prefers-color-scheme: dark) {
+        @media (prefers-color-scheme: dark) and (never) {
             :root {
                 --accent-100: #2A1C14;
                 --accent-500: #8049C6;
@@ -129,9 +131,9 @@ def apply_css():
 
         /* Streamlit may expose the active theme through data-theme; keep this in
            addition to prefers-color-scheme so both native theme modes work. */
-        html[data-theme="dark"],
-        body[data-theme="dark"],
-        .stApp[data-theme="dark"] {
+        html[data-theme="dark-disabled"],
+        body[data-theme="dark-disabled"],
+        .stApp[data-theme="dark-disabled"] {
             --accent-100: #2A1C14;
             --accent-500: #8049C6;
             --accent-600: #F2A074;
@@ -1862,6 +1864,35 @@ section[data-testid="stFileUploaderDropzone"].st-emotion-cache-1n7lb4w::before {
     font-weight: 400 !important;
     letter-spacing: 0 !important;
     color: #8049C6 !important;
+    -webkit-text-fill-color: #8049C6 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+
+/* HERO_FORCE_ARCHIVO_BLACK_V1
+   Force landing hero typography to use real Archivo Black.
+   This overrides global app font-family rules.
+   No size/layout changes here.
+*/
+.stApp .landing-hero-line-1-v2,
+.stApp .landing-hero-line-2-v2 {
+    font-family: "Archivo Black", "Arial Black", sans-serif !important;
+    font-weight: 400 !important;
+    font-synthesis: none !important;
+    -webkit-font-smoothing: antialiased !important;
+    text-rendering: geometricPrecision !important;
+}
+
+
+/* UPLOAD_SCREEN_STACK_SHIFT_UP_V1
+   Move the whole first upload-screen stack upward.
+   This affects logo + hero text + uploader together.
+*/
+.stApp:has(.upload-screen-active) [data-testid="stAppViewContainer"] .main .block-container,
+.stApp:has(.upload-screen-active) [data-testid="stAppViewContainer"] section.main .block-container,
+.stApp:has(.upload-screen-active) .block-container {
+    transform: translateY(-18px) !important;
 }
 
 </style>
