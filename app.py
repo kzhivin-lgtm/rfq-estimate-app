@@ -24,6 +24,7 @@ from db.repositories import (
 from engine.routing import select_routes
 from engine.estimate_engine import calculate_work_hours
 from styles import apply_css
+import os
 
 
 st.set_page_config(
@@ -920,18 +921,21 @@ def main():
 
     company_id = get_company_id()
 
-    with st.sidebar:
-        st.write("Navigation")
-        st.caption(f"company_id: {company_id}")
+    show_dev_nav = os.getenv("SHOW_DEV_NAV", "false").lower() in {"1", "true", "yes", "on"}
 
-        if st.button("Upload flow"):
-            go_to("upload")
+    if show_dev_nav:
+        with st.sidebar:
+            st.write("Navigation")
+            st.caption(f"company_id: {company_id}")
 
-        if st.button("Dev dashboard"):
-            go_to("dev_dashboard")
+            if st.button("Upload flow"):
+                go_to("upload")
 
-        if st.session_state.get("current_run_id"):
-            st.caption(f"run_id: {st.session_state.current_run_id}")
+            if st.button("Dev dashboard"):
+                go_to("dev_dashboard")
+
+            if st.session_state.get("current_run_id"):
+                st.caption(f"run_id: {st.session_state.current_run_id}")
 
     screen = st.session_state.screen
 
