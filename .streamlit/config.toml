@@ -1,2 +1,7 @@
 [server]
-headless = true
+port = 8503
+address = "localhost"
+headless = false
+
+[browser]
+serverAddress = "localhost"
