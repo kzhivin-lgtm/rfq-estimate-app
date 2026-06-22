@@ -222,135 +222,20 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     )
 
 
-# === COSTERLY_POST_UPLOAD_LAYOUT_CONTRACT_V1_12_0_START ===
-POST_UPLOAD_LAYOUT_V1_12_0 = {
-    "top_px": 88,
-    "width_px": 960,
-    "side_gap_px": 56,
-    "title": "Reading your RFQ package",
-    "subtitle": "AI Detection is analyzing the uploaded file and detecting estimate-scope objects.",
-    "initial_progress": 0.04,
-}
-
-
-def apply_post_upload_layout_contract_v1_12_0() -> None:
-    """
-    v1.12.0: single source of truth for all post-upload pages.
-
-    Everything after upload must use this layout contract:
-    - real processing screen
-    - File Review
-    - future object/correction/estimate screens
-    - frontend upload shell
-
-    Regression lock:
-    - Do not move .post-upload-title separately.
-    - Do not add per-screen top hacks.
-    - If top position changes, change POST_UPLOAD_LAYOUT_V1_12_0["top_px"] only.
-    """
-    top_px = POST_UPLOAD_LAYOUT_V1_12_0["top_px"]
-    width_px = POST_UPLOAD_LAYOUT_V1_12_0["width_px"]
-    side_gap_px = POST_UPLOAD_LAYOUT_V1_12_0["side_gap_px"]
+def render_post_upload_header(title: str, subtitle: str | None = None) -> None:
+    apply_post_upload_layout_css()
 
     st.markdown(
-        f"""
-<style>
-:root {{
-    --costerly-post-upload-top-v1-12-0: {top_px}px;
-    --costerly-post-upload-width-v1-12-0: {width_px}px;
-    --costerly-post-upload-side-gap-v1-12-0: {side_gap_px}px;
-}}
-
-/*
-One contract for real post-upload screens.
-The wrapper is rendered by render_post_upload_header().
-*/
-.costerly-post-upload-layout-v1-12-0 {{
-    width: min(
-        var(--costerly-post-upload-width-v1-12-0),
-        calc(100vw - var(--costerly-post-upload-side-gap-v1-12-0))
-    );
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: var(--costerly-post-upload-top-v1-12-0);
-    box-sizing: border-box;
-}}
-
-.costerly-post-upload-layout-v1-12-0 .post-upload-title {{
-    font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
-    color: #8049C6 !important;
-    font-size: 40px !important;
-    line-height: 1.1 !important;
-    font-weight: 500 !important;
-    letter-spacing: -0.02em !important;
-    margin: 0 0 var(--s5, 32px) 0 !important;
-    padding: 0 !important;
-}}
-
-.costerly-post-upload-layout-v1-12-0 .post-upload-subtitle {{
-    color: var(--ink-500, rgba(0, 0, 0, 0.52)) !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-    margin: calc(-1 * var(--s3, 16px)) 0 var(--s5, 32px) 0 !important;
-    max-width: 760px !important;
-}}
-
-/*
-Same contract for frontend shell.
-*/
-#costerly-upload-pixel-processing-shell-v1-11-3 .costerly-post-upload-layout-v1-12-0 {{
-    width: min(
-        var(--costerly-post-upload-width-v1-12-0),
-        calc(100vw - var(--costerly-post-upload-side-gap-v1-12-0))
-    ) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-top: var(--costerly-post-upload-top-v1-12-0) !important;
-    box-sizing: border-box !important;
-}}
-</style>
-        """,
+        f"<h1 class='post-upload-title'>{title}</h1>",
         unsafe_allow_html=True,
     )
 
+    if subtitle:
+        st.markdown(
+            f"<div class='post-upload-subtitle'>{subtitle}</div>",
+            unsafe_allow_html=True,
+        )
 
-def post_upload_header_html_v1_12_0(title: str, subtitle: str | None = None) -> str:
-    """Single HTML contract for the first heading on every post-upload page."""
-    import html as _html
-
-    safe_title = _html.escape(str(title))
-    safe_subtitle = _html.escape(str(subtitle)) if subtitle else ""
-
-    subtitle_html = (
-        f'<div class="post-upload-subtitle">{safe_subtitle}</div>'
-        if safe_subtitle
-        else ""
-    )
-
-    return (
-        '<div class="costerly-post-upload-layout-v1-12-0">'
-        f'<h1 class="post-upload-title">{safe_title}</h1>'
-        f'{subtitle_html}'
-        '</div>'
-    )
-
-
-def post_upload_progress_html_v1_12_0(progress_value: float) -> str:
-    """Shared progress bar HTML for processing screen and shell."""
-    value = max(0.0, min(1.0, float(progress_value)))
-    width = int(round(value * 100))
-
-    return (
-        "<div class='custom-progress-track'>"
-        f"<div class='custom-progress-fill is-running' style='width:{width}%;'></div>"
-        "</div>"
-    )
-# === COSTERLY_POST_UPLOAD_LAYOUT_CONTRACT_V1_12_0_END ===
-
-
-def render_post_upload_header(title: str, subtitle: str | None = None):
-    apply_post_upload_layout_contract_v1_12_0()
-    st.html(post_upload_header_html_v1_12_0(title, subtitle))
 
 def detect_uploaded_file_type(file_name: str) -> str:
     """Return a simple file type label for uploaded RFQ packages."""
@@ -591,7 +476,7 @@ def install_upload_pixel_processing_shell_v1_11_3() -> None:
                 overflow: hidden;
             }
 
-            #${SHELL_ID} .costerly-post-upload-layout-v1-12-0 {
+            #${SHELL_ID} .costerly-pixel-processing-container-v1-11-3 {
                 width: min(960px, calc(100vw - 56px));
                 max-width: none;
                 margin-left: auto;
@@ -747,7 +632,7 @@ def install_upload_pixel_processing_shell_v1_11_3() -> None:
             shell.id = SHELL_ID;
             shell.setAttribute("data-source", source || "unknown");
             shell.innerHTML = `
-                <div class="costerly-post-upload-layout-v1-12-0">
+                <div class="costerly-pixel-processing-container-v1-11-3">
                     <h1 class="post-upload-title">Reading your RFQ package</h1>
 
                     <div class="post-upload-subtitle">
