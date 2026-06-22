@@ -2206,10 +2206,10 @@ def apply_custom_upload_block_css_v1_9():
 <style>
 
 /* ============================================================
-   COSTERLY_CUSTOM_UPLOAD_BLOCK_V1_9_4_FINAL_ORDER_LOCK
+   COSTERLY_CUSTOM_UPLOAD_BLOCK_V1_9_RESTORED
 
-   This block intentionally lives at the end of styles.py.
-   It must win over every previous Streamlit/native uploader rule.
+   Stable custom visual uploader.
+   Native st.file_uploader remains the real upload mechanism.
    ============================================================ */
 
 :root {
@@ -2225,7 +2225,6 @@ def apply_custom_upload_block_css_v1_9():
   --costerly-upload-radius: 8px;
 }
 
-/* Wrapper size */
 div[data-testid="stFileUploader"] {
   width: var(--costerly-upload-width) !important;
   max-width: var(--costerly-upload-width) !important;
@@ -2233,7 +2232,6 @@ div[data-testid="stFileUploader"] {
   margin-right: auto !important;
 }
 
-/* Hide Streamlit label */
 div[data-testid="stFileUploader"] > label,
 div[data-testid="stFileUploader"] label {
   display: none !important;
@@ -2244,7 +2242,6 @@ div[data-testid="stFileUploader"] label {
   padding: 0 !important;
 }
 
-/* Main dropzone */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
   position: relative !important;
 
@@ -2274,7 +2271,6 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] 
     border-color 130ms ease !important;
 }
 
-/* Hide all native Streamlit uploader text/content */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] > div,
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] small,
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] span,
@@ -2285,7 +2281,6 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] 
   pointer-events: none !important;
 }
 
-/* Normal custom text. Exact copy. */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"]::before {
   content: "📎 Drop or upload" !important;
 
@@ -2312,19 +2307,16 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"]:
   border-radius: 0 !important;
 }
 
-/* Hover */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"]:hover {
   background: var(--costerly-upload-peach) !important;
   border-color: var(--costerly-upload-orange) !important;
 }
 
-/* Dragover */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"].costerly-upload-dragover {
   background: var(--costerly-upload-lilac) !important;
   border-color: var(--costerly-upload-indigo) !important;
 }
 
-/* Dragover plus: horizontal rounded white bar */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"].costerly-upload-dragover::before {
   content: "" !important;
 
@@ -2354,10 +2346,6 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"].
   display: none !important;
 }
 
-
-/* Dragover plus: vertical rounded white bar */
-
-/* Kill native shadows */
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] *,
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] *::before,
 div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] *::after {
@@ -2371,37 +2359,17 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] 
   }
 
   div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"]::before {
-    font-size: 28px !important;
+    font-size: 22px !important;
   }
 
   div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"].costerly-upload-dragover::before {
-  content: "" !important;
-
-  position: absolute !important;
-  inset: 0 !important;
-
-  width: 94px !important;
-  height: 94px !important;
-  margin: auto !important;
-
-  transform: none !important;
-
-  background-color: transparent !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 21 V79 M21 50 H79' stroke='white' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: center center !important;
-  background-size: contain !important;
-
-  border-radius: 0 !important;
-
-  pointer-events: none !important;
-  z-index: 5 !important;
+    width: 82px !important;
+    height: 82px !important;
+  }
 }
-
 
 </style>
         """,
         unsafe_allow_html=True,
     )
 # === COSTERLY_CUSTOM_UPLOAD_BLOCK_V1_9_END ===
-
