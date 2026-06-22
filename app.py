@@ -415,6 +415,340 @@ def install_custom_upload_dragover_js_v1_9():
 # ============================================================
 
 # === COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_STATE_V1_9_27_START ===
+# === COSTERLY_UPLOAD_IMMEDIATE_PROCESSING_SHELL_V1_11_0_START ===
+def install_upload_immediate_processing_shell_v1_11_0() -> None:
+    """
+    v1.11.0: show a processing-like frontend shell immediately after file drop/change.
+
+    Why:
+    On prod, there is a network/server gap between browser drop and Python-side
+    uploaded_file availability. The shell covers that gap so the user never sees
+    the upload card return to an idle state after dropping a file.
+
+    Regression lock:
+    - This function must remain client-side only.
+    - It must not change st.session_state.screen.
+    - It must not start backend processing.
+    - Real processing still starts only when Streamlit gives Python uploaded_file.
+    - Keep v1.9.27/v1.9.34 guards untouched.
+    """
+    costerly_component_html_js_runner_v1_9_34(
+        """
+<script>
+(function () {
+    const VERSION = "v1.11.0";
+    const SHELL_ID = "costerly-upload-processing-shell-v1-11-0";
+    const STYLE_ID = "costerly-upload-processing-shell-style-v1-11-0";
+    const INSTALLED_FLAG = "__costerlyUploadImmediateProcessingShellV1110Installed";
+    const TIMEOUT_KEY = "__costerlyUploadProcessingShellTimeoutV1110";
+    const WATCHER_KEY = "__costerlyUploadProcessingShellWatcherV1110";
+
+    const parentWindow = window.parent || window;
+    const doc = parentWindow.document;
+
+    if (!doc || !doc.body) {
+        return;
+    }
+
+    if (doc[INSTALLED_FLAG]) {
+        return;
+    }
+
+    doc[INSTALLED_FLAG] = true;
+
+    function installStyle() {
+        if (doc.getElementById(STYLE_ID)) {
+            return;
+        }
+
+        const style = doc.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            html.costerly-upload-processing-shell-active-v1-11-0,
+            body.costerly-upload-processing-shell-active-v1-11-0 {
+                overflow: hidden !important;
+            }
+
+            #${SHELL_ID} {
+                position: fixed;
+                inset: 0;
+                z-index: 2147483000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #F1EFEF;
+                color: #2A1F2C;
+                font-family: var(--font, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-card-v1-11-0 {
+                width: min(680px, calc(100vw - 44px));
+                min-height: 360px;
+                box-sizing: border-box;
+                border-radius: 24px;
+                background: #FFFFFF;
+                border: 1px solid rgba(42, 31, 44, 0.13);
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.10);
+                padding: 54px 48px 48px 48px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-mark-v1-11-0 {
+                width: 74px;
+                height: 74px;
+                border-radius: 999px;
+                border: 2px solid rgba(128, 73, 198, 0.25);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 26px;
+                position: relative;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-mark-v1-11-0::before {
+                content: "";
+                width: 46px;
+                height: 46px;
+                border-radius: 999px;
+                border: 4px solid rgba(128, 73, 198, 0.22);
+                border-top-color: #8049C6;
+                animation: costerlyUploadProcessingSpinV1110 0.9s linear infinite;
+                box-sizing: border-box;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-title-v1-11-0 {
+                font-size: 34px;
+                line-height: 1.08;
+                font-weight: 750;
+                letter-spacing: -0.045em;
+                color: #2A1F2C;
+                margin: 0 0 12px 0;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-subtitle-v1-11-0 {
+                font-size: 17px;
+                line-height: 1.45;
+                color: rgba(42, 31, 44, 0.68);
+                margin: 0;
+                max-width: 470px;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-timeout-v1-11-0 {
+                display: none;
+                margin-top: 22px;
+                font-size: 14px;
+                line-height: 1.45;
+                color: rgba(42, 31, 44, 0.62);
+            }
+
+            #${SHELL_ID}[data-slow="true"] .costerly-upload-processing-timeout-v1-11-0 {
+                display: block;
+            }
+
+            #${SHELL_ID} .costerly-upload-processing-cancel-v1-11-0 {
+                margin-top: 14px;
+                border: 1px solid rgba(42, 31, 44, 0.18);
+                background: #FFFFFF;
+                color: #2A1F2C;
+                border-radius: 999px;
+                padding: 9px 16px;
+                font-size: 13px;
+                cursor: pointer;
+            }
+
+            @keyframes costerlyUploadProcessingSpinV1110 {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @media (max-width: 760px) {
+                #${SHELL_ID} .costerly-upload-processing-card-v1-11-0 {
+                    padding: 42px 28px 38px 28px;
+                    min-height: 320px;
+                }
+
+                #${SHELL_ID} .costerly-upload-processing-title-v1-11-0 {
+                    font-size: 29px;
+                }
+            }
+        `;
+        doc.head.appendChild(style);
+    }
+
+    function realProcessingIsActive() {
+        return Boolean(
+            doc.getElementById("costerly-processing-screen-active-v1-9-27") ||
+            doc.body.classList.contains("costerly-processing-active-v1-9-27") ||
+            doc.documentElement.classList.contains("costerly-processing-active-v1-9-27")
+        );
+    }
+
+    function removeShell() {
+        const shell = doc.getElementById(SHELL_ID);
+
+        if (shell) {
+            shell.remove();
+        }
+
+        doc.documentElement.classList.remove("costerly-upload-processing-shell-active-v1-11-0");
+        doc.body.classList.remove("costerly-upload-processing-shell-active-v1-11-0");
+
+        if (parentWindow[TIMEOUT_KEY]) {
+            parentWindow.clearTimeout(parentWindow[TIMEOUT_KEY]);
+            parentWindow[TIMEOUT_KEY] = null;
+        }
+    }
+
+    function startRealProcessingWatcher() {
+        if (parentWindow[WATCHER_KEY]) {
+            return;
+        }
+
+        parentWindow[WATCHER_KEY] = parentWindow.setInterval(function () {
+            if (realProcessingIsActive()) {
+                removeShell();
+                parentWindow.clearInterval(parentWindow[WATCHER_KEY]);
+                parentWindow[WATCHER_KEY] = null;
+            }
+        }, 120);
+    }
+
+    function showShell(source) {
+        if (realProcessingIsActive()) {
+            return;
+        }
+
+        installStyle();
+
+        let shell = doc.getElementById(SHELL_ID);
+
+        if (!shell) {
+            shell = doc.createElement("div");
+            shell.id = SHELL_ID;
+            shell.setAttribute("data-source", source || "unknown");
+            shell.innerHTML = `
+                <div class="costerly-upload-processing-card-v1-11-0">
+                    <div class="costerly-upload-processing-mark-v1-11-0" aria-hidden="true"></div>
+                    <h1 class="costerly-upload-processing-title-v1-11-0">Preparing your file</h1>
+                    <p class="costerly-upload-processing-subtitle-v1-11-0">
+                        Upload started. We’re preparing the file before analysis.
+                    </p>
+                    <div class="costerly-upload-processing-timeout-v1-11-0">
+                        Upload is taking longer than expected.
+                        <br />
+                        <button class="costerly-upload-processing-cancel-v1-11-0" type="button">
+                            Return to upload
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            doc.body.appendChild(shell);
+
+            const cancel = shell.querySelector(".costerly-upload-processing-cancel-v1-11-0");
+            if (cancel) {
+                cancel.addEventListener("click", removeShell);
+            }
+        }
+
+        shell.dataset.source = source || "unknown";
+        shell.dataset.slow = "false";
+
+        doc.documentElement.classList.add("costerly-upload-processing-shell-active-v1-11-0");
+        doc.body.classList.add("costerly-upload-processing-shell-active-v1-11-0");
+
+        if (parentWindow[TIMEOUT_KEY]) {
+            parentWindow.clearTimeout(parentWindow[TIMEOUT_KEY]);
+        }
+
+        parentWindow[TIMEOUT_KEY] = parentWindow.setTimeout(function () {
+            const activeShell = doc.getElementById(SHELL_ID);
+            if (activeShell && !realProcessingIsActive()) {
+                activeShell.dataset.slow = "true";
+            }
+        }, 25000);
+
+        startRealProcessingWatcher();
+    }
+
+    function bindFileInputs() {
+        const inputs = Array.from(doc.querySelectorAll('input[type="file"]'));
+
+        inputs.forEach(function (input) {
+            if (input.dataset.costerlyUploadProcessingShellV1110Bound === "true") {
+                return;
+            }
+
+            input.dataset.costerlyUploadProcessingShellV1110Bound = "true";
+
+            input.addEventListener("change", function () {
+                if (input.files && input.files.length > 0) {
+                    showShell("input-change");
+                }
+            }, true);
+        });
+    }
+
+    doc.addEventListener("drop", function (event) {
+        try {
+            if (
+                event.dataTransfer &&
+                event.dataTransfer.files &&
+                event.dataTransfer.files.length > 0
+            ) {
+                parentWindow.setTimeout(function () {
+                    showShell("drop");
+                }, 0);
+            }
+        } catch (err) {
+            // Keep upload behavior intact even if shell detection fails.
+        }
+    }, true);
+
+    doc.addEventListener("change", function (event) {
+        const target = event.target;
+
+        if (
+            target &&
+            target.matches &&
+            target.matches('input[type="file"]') &&
+            target.files &&
+            target.files.length > 0
+        ) {
+            showShell("document-change");
+        }
+    }, true);
+
+    const observer = new MutationObserver(function () {
+        bindFileInputs();
+
+        if (realProcessingIsActive()) {
+            removeShell();
+        }
+    });
+
+    observer.observe(doc.body, {
+        childList: true,
+        subtree: true
+    });
+
+    bindFileInputs();
+    startRealProcessingWatcher();
+
+    console.debug("[Costerly] Upload immediate processing shell installed", VERSION);
+})();
+</script>
+        """,
+        height=0,
+        width=0,
+    )
+# === COSTERLY_UPLOAD_IMMEDIATE_PROCESSING_SHELL_V1_11_0_END ===
+
 def install_upload_clear_processing_ghost_state_v1_9_27():
     costerly_component_html_js_runner_v1_9_34(
         """
@@ -795,6 +1129,7 @@ def render_upload_screen(company_id=None):
     st.markdown('</div>', unsafe_allow_html=True)
 
     install_custom_upload_dragover_js_v1_9()
+    install_upload_immediate_processing_shell_v1_11_0()
 
 
     uploaded_file = st.file_uploader(
