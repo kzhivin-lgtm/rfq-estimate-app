@@ -11,6 +11,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from agents.detection_agent import run_detection_agent
 from db.supabase_client import get_supabase_client
@@ -24,6 +25,7 @@ from db.repositories import (
 from engine.routing import select_routes
 from engine.estimate_engine import calculate_work_hours
 from styles import apply_css
+from styles import apply_custom_upload_block_css_v1_9
 import os
 import textwrap
 
@@ -36,6 +38,7 @@ st.set_page_config(
 )
 
 apply_css()
+apply_custom_upload_block_css_v1_9()
 
 
 def get_company_id() -> str:
@@ -210,6 +213,102 @@ def detect_uploaded_file_type(file_name: str) -> str:
 
 
 # First screen: minimal RFQ package upload.
+# === COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_START ===
+def install_custom_upload_dragover_js_v1_9():
+    components.html(
+        """
+<script>
+(() => {
+  const parentDoc = window.parent.document;
+  const markerId = "COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_2";
+
+  const oldMarkers = [
+    "COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9",
+    "COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_1",
+    "COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_2"
+  ];
+
+  for (const id of oldMarkers) {
+    const old = parentDoc.getElementById(id);
+    if (old) old.remove();
+  }
+
+  const script = parentDoc.createElement("script");
+  script.id = markerId;
+
+  script.textContent = `
+(() => {
+  const DROPZONE_SELECTOR = 'section[data-testid="stFileUploaderDropzone"]';
+  const DRAG_CLASS = 'costerly-upload-dragover';
+
+  let clearTimer = null;
+
+  function getDropzones() {
+    return Array.from(document.querySelectorAll(DROPZONE_SELECTOR));
+  }
+
+  function hasFiles(event) {
+    const dt = event.dataTransfer;
+    if (!dt) return true;
+
+    const types = Array.from(dt.types || []);
+    return types.includes('Files') || types.includes('application/x-moz-file');
+  }
+
+  function setDragover(on) {
+    const zones = getDropzones();
+
+    zones.forEach((dz) => {
+      dz.classList.toggle(DRAG_CLASS, Boolean(on));
+    });
+
+    document.documentElement.classList.toggle('costerly-file-is-dragging', Boolean(on));
+    document.body.classList.toggle('costerly-file-is-dragging', Boolean(on));
+  }
+
+  function clearDragover() {
+    window.clearTimeout(clearTimer);
+    setDragover(false);
+  }
+
+  function forceDragover(event) {
+    if (!hasFiles(event)) return;
+
+    event.preventDefault();
+    window.clearTimeout(clearTimer);
+    setDragover(true);
+  }
+
+  document.addEventListener('dragenter', forceDragover, true);
+
+  document.addEventListener('dragover', forceDragover, true);
+
+  document.addEventListener(
+    'dragleave',
+    () => {
+      window.clearTimeout(clearTimer);
+      clearTimer = window.setTimeout(() => {
+        setDragover(false);
+      }, 140);
+    },
+    true
+  );
+
+  document.addEventListener('drop', clearDragover, true);
+  document.addEventListener('dragend', clearDragover, true);
+  window.addEventListener('blur', clearDragover, true);
+})();
+  `;
+
+  parentDoc.head.appendChild(script);
+})();
+</script>
+        """,
+        height=0,
+        width=0,
+    )
+# === COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_END ===
+
 def render_upload_screen(company_id=None):
     st.markdown(
         """
@@ -333,9 +432,9 @@ def render_upload_screen(company_id=None):
     st.markdown(
         """
         <div class="landing-hero-line-1-v2">
-            AI estimating.<br>
-            From quote request<br>
-            to proposal in minutes, not days
+            AI estimating<br>
+            Quote request to proposal<br>
+            In minutes, not days
         </div>
         """,
         unsafe_allow_html=True,
@@ -343,8 +442,11 @@ def render_upload_screen(company_id=None):
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+    install_custom_upload_dragover_js_v1_9()
+
+
     uploaded_file = st.file_uploader(
-        "📎 DROP OR UPLOAD",
+        "📎 Drop or upload",
         type=["pdf"],
         label_visibility="collapsed",
     )
@@ -1015,3 +1117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
