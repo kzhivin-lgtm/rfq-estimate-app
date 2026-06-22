@@ -237,7 +237,6 @@ def render_post_upload_header(title: str, subtitle: str | None = None) -> None:
         )
 
 
-
 def detect_uploaded_file_type(file_name: str) -> str:
     """Return a simple file type label for uploaded RFQ packages."""
     suffix = Path(file_name).suffix.lower().lstrip(".")
@@ -415,33 +414,31 @@ def install_custom_upload_dragover_js_v1_9():
 # ============================================================
 
 # === COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_STATE_V1_9_27_START ===
-# === COSTERLY_UPLOAD_EARLY_PROCESSING_SCREEN_SHELL_V1_11_1_START ===
-def install_upload_early_processing_screen_shell_v1_11_1() -> None:
-    """
-    v1.11.1: immediately show a processing-screen-looking frontend shell after file drop/change.
 
-    UX:
-    - drop/change -> immediately show Processing file screen
-    - progress bar stays at first stage while Streamlit receives the file
-    - real backend processing screen takes over after Python receives uploaded_file
+
+# === COSTERLY_UPLOAD_PIXEL_PROCESSING_SHELL_V1_11_3_START ===
+def install_upload_pixel_processing_shell_v1_11_3() -> None:
+    """
+    v1.11.3: on file drop/change, immediately show a frontend shell that visually
+    matches the real processing screen.
 
     Regression lock:
     - Client-side only.
-    - Does not change st.session_state.screen.
+    - Does not mutate st.session_state.screen.
     - Does not start backend processing.
-    - Real processing starts only when Streamlit gives Python uploaded_file.
-    - Keep v1.9.27/v1.9.34 guards untouched.
+    - Real processing starts only after Python receives uploaded_file.
+    - Shell auto-removes when real processing marker/class from v1.9.27 appears.
     """
     costerly_component_html_js_runner_v1_9_34(
         """
 <script>
 (function () {
-    const VERSION = "v1.11.1";
-    const SHELL_ID = "costerly-upload-early-processing-shell-v1-11-1";
-    const STYLE_ID = "costerly-upload-early-processing-shell-style-v1-11-1";
-    const INSTALLED_FLAG = "__costerlyUploadEarlyProcessingShellV1111Installed";
-    const TIMEOUT_KEY = "__costerlyUploadEarlyProcessingShellTimeoutV1111";
-    const WATCHER_KEY = "__costerlyUploadEarlyProcessingShellWatcherV1111";
+    const VERSION = "v1.11.3";
+    const SHELL_ID = "costerly-upload-pixel-processing-shell-v1-11-3";
+    const STYLE_ID = "costerly-upload-pixel-processing-shell-style-v1-11-3";
+    const INSTALLED_FLAG = "__costerlyUploadPixelProcessingShellV1113Installed";
+    const TIMEOUT_KEY = "__costerlyUploadPixelProcessingShellTimeoutV1113";
+    const WATCHER_KEY = "__costerlyUploadPixelProcessingShellWatcherV1113";
 
     const parentWindow = window.parent || window;
     const doc = parentWindow.document;
@@ -464,8 +461,8 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
         const style = doc.createElement("style");
         style.id = STYLE_ID;
         style.textContent = `
-            html.costerly-upload-early-processing-shell-active-v1-11-1,
-            body.costerly-upload-early-processing-shell-active-v1-11-1 {
+            html.costerly-upload-pixel-processing-shell-active-v1-11-3,
+            body.costerly-upload-pixel-processing-shell-active-v1-11-3 {
                 overflow: hidden !important;
             }
 
@@ -473,101 +470,83 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
                 position: fixed;
                 inset: 0;
                 z-index: 2147483000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #F1EFEF;
-                color: #2A1F2C;
-                font-family: var(--font, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-            }
-
-            #${SHELL_ID} .costerly-early-processing-wrap-v1-11-1 {
-                width: min(760px, calc(100vw - 44px));
+                background: #F1EFEF !important;
+                color: #2A1F2C !important;
                 box-sizing: border-box;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-
-            #${SHELL_ID} .costerly-early-processing-logo-v1-11-1 {
-                width: 82px;
-                height: 82px;
-                border-radius: 999px;
-                border: 2px solid rgba(128, 73, 198, 0.28);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 30px;
-                position: relative;
-            }
-
-            #${SHELL_ID} .costerly-early-processing-logo-v1-11-1::before {
-                content: "";
-                width: 52px;
-                height: 52px;
-                border-radius: 999px;
-                border: 4px solid rgba(128, 73, 198, 0.20);
-                border-top-color: #8049C6;
-                animation: costerlyEarlyProcessingSpinV1111 0.95s linear infinite;
-                box-sizing: border-box;
-            }
-
-            #${SHELL_ID} .costerly-early-processing-title-v1-11-1 {
-                font-size: 40px;
-                line-height: 1.08;
-                font-weight: 760;
-                letter-spacing: -0.05em;
-                color: #2A1F2C;
-                margin: 0 0 14px 0;
-            }
-
-            #${SHELL_ID} .costerly-early-processing-subtitle-v1-11-1 {
-                font-size: 17px;
-                line-height: 1.45;
-                color: rgba(42, 31, 44, 0.66);
-                margin: 0 0 34px 0;
-                max-width: 560px;
-            }
-
-            #${SHELL_ID} .costerly-early-processing-progress-track-v1-11-1 {
-                width: min(520px, 100%);
-                height: 10px;
-                border-radius: 999px;
-                background: rgba(42, 31, 44, 0.10);
                 overflow: hidden;
-                margin: 0 auto 16px auto;
             }
 
-            #${SHELL_ID} .costerly-early-processing-progress-fill-v1-11-1 {
+            #${SHELL_ID} .costerly-pixel-processing-container-v1-11-3 {
+                width: min(960px, calc(100vw - 56px));
+                max-width: none;
+                margin-left: auto;
+                margin-right: auto;
+                padding-top: 88px;
+                padding-left: 0;
+                padding-right: 0;
+                padding-bottom: 72px;
+                box-sizing: border-box;
+                background: #F1EFEF;
+            }
+
+            #${SHELL_ID} .post-upload-title {
+                font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
+                color: #8049C6 !important;
+                font-size: 40px !important;
+                line-height: 1.1 !important;
+                font-weight: 500 !important;
+                letter-spacing: -0.02em !important;
+                margin: 0 0 var(--s5, 32px) 0 !important;
+                padding: 0 !important;
+            }
+
+            #${SHELL_ID} .post-upload-subtitle {
+                color: var(--ink-500, rgba(0, 0, 0, 0.52)) !important;
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                margin: calc(-1 * var(--s3, 16px)) 0 var(--s5, 32px) 0 !important;
+                max-width: 760px !important;
+            }
+
+            #${SHELL_ID} .custom-progress-track {
+                width: 100%;
+                height: 12px;
+                border-radius: 999px;
+                background: #D85A5A;
+                overflow: hidden;
+            }
+
+            #${SHELL_ID} .custom-progress-fill {
                 height: 100%;
-                width: 6%;
+                min-width: 0;
                 border-radius: 999px;
                 background: #8049C6;
-                transition: width 200ms ease;
+                transition: width 140ms linear;
             }
 
-            #${SHELL_ID} .costerly-early-processing-step-v1-11-1 {
-                font-size: 15px;
-                line-height: 1.35;
-                color: rgba(42, 31, 44, 0.70);
-                margin: 0;
+            #${SHELL_ID} .custom-progress-fill.is-running {
+                background: linear-gradient(
+                    90deg,
+                    #8049C6 0%,
+                    #9A65DF 52%,
+                    #8049C6 100%
+                );
             }
 
-            #${SHELL_ID} .costerly-early-processing-timeout-v1-11-1 {
+            #${SHELL_ID} .costerly-pixel-processing-timeout-v1-11-3 {
                 display: none;
-                margin-top: 26px;
+                margin-top: 24px;
                 font-size: 14px;
                 line-height: 1.45;
                 color: rgba(42, 31, 44, 0.62);
             }
 
-            #${SHELL_ID}[data-slow="true"] .costerly-early-processing-timeout-v1-11-1 {
+            #${SHELL_ID}[data-slow="true"] .costerly-pixel-processing-timeout-v1-11-3 {
                 display: block;
             }
 
-            #${SHELL_ID} .costerly-early-processing-cancel-v1-11-1 {
-                margin-top: 14px;
+            #${SHELL_ID} .costerly-pixel-processing-cancel-v1-11-3 {
+                margin-top: 12px;
                 border: 1px solid rgba(42, 31, 44, 0.18);
                 background: #FFFFFF;
                 color: #2A1F2C;
@@ -576,23 +555,8 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
                 font-size: 13px;
                 cursor: pointer;
             }
-
-            @keyframes costerlyEarlyProcessingSpinV1111 {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-
-            @media (max-width: 760px) {
-                #${SHELL_ID} .costerly-early-processing-title-v1-11-1 {
-                    font-size: 32px;
-                }
-
-                #${SHELL_ID} .costerly-early-processing-subtitle-v1-11-1 {
-                    font-size: 16px;
-                }
-            }
         `;
+
         doc.head.appendChild(style);
     }
 
@@ -611,8 +575,8 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
             shell.remove();
         }
 
-        doc.documentElement.classList.remove("costerly-upload-early-processing-shell-active-v1-11-1");
-        doc.body.classList.remove("costerly-upload-early-processing-shell-active-v1-11-1");
+        doc.documentElement.classList.remove("costerly-upload-pixel-processing-shell-active-v1-11-3");
+        doc.body.classList.remove("costerly-upload-pixel-processing-shell-active-v1-11-3");
 
         if (parentWindow[TIMEOUT_KEY]) {
             parentWindow.clearTimeout(parentWindow[TIMEOUT_KEY]);
@@ -631,7 +595,26 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
                 parentWindow.clearInterval(parentWindow[WATCHER_KEY]);
                 parentWindow[WATCHER_KEY] = null;
             }
-        }, 120);
+        }, 80);
+    }
+
+    function removeLegacyV11Shells() {
+        [
+            "costerly-upload-processing-shell-v1-11-0",
+            "costerly-upload-early-processing-shell-v1-11-1"
+        ].forEach(function (id) {
+            const old = doc.getElementById(id);
+            if (old) old.remove();
+        });
+
+        doc.documentElement.classList.remove(
+            "costerly-upload-processing-shell-active-v1-11-0",
+            "costerly-upload-early-processing-shell-active-v1-11-1"
+        );
+        doc.body.classList.remove(
+            "costerly-upload-processing-shell-active-v1-11-0",
+            "costerly-upload-early-processing-shell-active-v1-11-1"
+        );
     }
 
     function showShell(source) {
@@ -640,6 +623,7 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
         }
 
         installStyle();
+        removeLegacyV11Shells();
 
         let shell = doc.getElementById(SHELL_ID);
 
@@ -648,27 +632,21 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
             shell.id = SHELL_ID;
             shell.setAttribute("data-source", source || "unknown");
             shell.innerHTML = `
-                <div class="costerly-early-processing-wrap-v1-11-1">
-                    <div class="costerly-early-processing-logo-v1-11-1" aria-hidden="true"></div>
+                <div class="costerly-pixel-processing-container-v1-11-3">
+                    <h1 class="post-upload-title">Reading your RFQ package</h1>
 
-                    <h1 class="costerly-early-processing-title-v1-11-1">Processing file</h1>
-
-                    <p class="costerly-early-processing-subtitle-v1-11-1">
-                        We’re analyzing your RFQ package and preparing the detected objects.
-                    </p>
-
-                    <div class="costerly-early-processing-progress-track-v1-11-1">
-                        <div class="costerly-early-processing-progress-fill-v1-11-1"></div>
+                    <div class="post-upload-subtitle">
+                        AI Detection is analyzing the uploaded file and detecting estimate-scope objects.
                     </div>
 
-                    <p class="costerly-early-processing-step-v1-11-1">
-                        Receiving file
-                    </p>
+                    <div class="custom-progress-track">
+                        <div class="custom-progress-fill is-running" style="width:4%;"></div>
+                    </div>
 
-                    <div class="costerly-early-processing-timeout-v1-11-1">
+                    <div class="costerly-pixel-processing-timeout-v1-11-3">
                         Upload is taking longer than expected.
                         <br />
-                        <button class="costerly-early-processing-cancel-v1-11-1" type="button">
+                        <button class="costerly-pixel-processing-cancel-v1-11-3" type="button">
                             Return to upload
                         </button>
                     </div>
@@ -677,7 +655,7 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
 
             doc.body.appendChild(shell);
 
-            const cancel = shell.querySelector(".costerly-early-processing-cancel-v1-11-1");
+            const cancel = shell.querySelector(".costerly-pixel-processing-cancel-v1-11-3");
             if (cancel) {
                 cancel.addEventListener("click", removeShell);
             }
@@ -686,8 +664,8 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
         shell.dataset.source = source || "unknown";
         shell.dataset.slow = "false";
 
-        doc.documentElement.classList.add("costerly-upload-early-processing-shell-active-v1-11-1");
-        doc.body.classList.add("costerly-upload-early-processing-shell-active-v1-11-1");
+        doc.documentElement.classList.add("costerly-upload-pixel-processing-shell-active-v1-11-3");
+        doc.body.classList.add("costerly-upload-pixel-processing-shell-active-v1-11-3");
 
         if (parentWindow[TIMEOUT_KEY]) {
             parentWindow.clearTimeout(parentWindow[TIMEOUT_KEY]);
@@ -707,11 +685,11 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
         const inputs = Array.from(doc.querySelectorAll('input[type="file"]'));
 
         inputs.forEach(function (input) {
-            if (input.dataset.costerlyUploadEarlyProcessingShellV1111Bound === "true") {
+            if (input.dataset.costerlyUploadPixelProcessingShellV1113Bound === "true") {
                 return;
             }
 
-            input.dataset.costerlyUploadEarlyProcessingShellV1111Bound = "true";
+            input.dataset.costerlyUploadPixelProcessingShellV1113Bound = "true";
 
             input.addEventListener("change", function () {
                 if (input.files && input.files.length > 0) {
@@ -753,6 +731,7 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
 
     const observer = new MutationObserver(function () {
         bindFileInputs();
+        removeLegacyV11Shells();
 
         if (realProcessingIsActive()) {
             removeShell();
@@ -765,183 +744,17 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
     });
 
     bindFileInputs();
+    removeLegacyV11Shells();
     startRealProcessingWatcher();
 
-    console.debug("[Costerly] Upload early processing screen shell installed", VERSION);
+    console.debug("[Costerly] Pixel processing upload shell installed", VERSION);
 })();
 </script>
         """,
         height=0,
         width=0,
     )
-# === COSTERLY_UPLOAD_EARLY_PROCESSING_SCREEN_SHELL_V1_11_1_END ===
-
-# === COSTERLY_UPLOAD_LEGACY_PREPARING_REWRITER_V1_11_2_START ===
-def install_upload_legacy_preparing_rewriter_v1_11_2() -> None:
-    """
-    v1.11.2: rewrite/remove legacy v1.11.0 Preparing shell if it appears.
-
-    Why:
-    Existing browser tabs can keep old anonymous JS listeners from v1.11.0.
-    We cannot directly remove those listeners, but we can immediately rewrite
-    their DOM after they create the old shell.
-
-    Regression lock:
-    - Client-side only.
-    - Does not change st.session_state.screen.
-    - Does not start backend processing.
-    - Does not touch v1.9.27/v1.9.34 guards.
-    """
-    costerly_component_html_js_runner_v1_9_34(
-        """
-<script>
-(function () {
-    const VERSION = "v1.11.2";
-    const LEGACY_SHELL_ID = "costerly-upload-processing-shell-v1-11-0";
-    const STYLE_ID = "costerly-upload-legacy-preparing-rewriter-style-v1-11-2";
-    const INSTALLED_FLAG = "__costerlyUploadLegacyPreparingRewriterV1112Installed";
-
-    const parentWindow = window.parent || window;
-    const doc = parentWindow.document;
-
-    if (!doc || !doc.body) {
-        return;
-    }
-
-    function installStyle() {
-        if (doc.getElementById(STYLE_ID)) {
-            return;
-        }
-
-        const style = doc.createElement("style");
-        style.id = STYLE_ID;
-        style.textContent = `
-            #${LEGACY_SHELL_ID} {
-                background: #F1EFEF !important;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-upload-processing-card-v1-11-0 {
-                width: min(760px, calc(100vw - 44px)) !important;
-                min-height: 0 !important;
-                background: transparent !important;
-                border: 0 !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-upload-processing-title-v1-11-0 {
-                font-size: 40px !important;
-                line-height: 1.08 !important;
-                font-weight: 760 !important;
-                letter-spacing: -0.05em !important;
-                color: #2A1F2C !important;
-                margin: 0 0 14px 0 !important;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-upload-processing-subtitle-v1-11-0 {
-                font-size: 17px !important;
-                line-height: 1.45 !important;
-                color: rgba(42, 31, 44, 0.66) !important;
-                margin: 0 0 34px 0 !important;
-                max-width: 560px !important;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-legacy-progress-track-v1-11-2 {
-                width: min(520px, 100%);
-                height: 10px;
-                border-radius: 999px;
-                background: rgba(42, 31, 44, 0.10);
-                overflow: hidden;
-                margin: 0 auto 16px auto;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-legacy-progress-fill-v1-11-2 {
-                height: 100%;
-                width: 6%;
-                border-radius: 999px;
-                background: #8049C6;
-            }
-
-            #${LEGACY_SHELL_ID} .costerly-legacy-step-v1-11-2 {
-                font-size: 15px;
-                line-height: 1.35;
-                color: rgba(42, 31, 44, 0.70);
-                margin: 0;
-            }
-        `;
-
-        doc.head.appendChild(style);
-    }
-
-    function rewriteLegacyShell() {
-        installStyle();
-
-        const shell = doc.getElementById(LEGACY_SHELL_ID);
-        if (!shell) {
-            return false;
-        }
-
-        shell.dataset.rewrittenByV1112 = "true";
-
-        const title = shell.querySelector(".costerly-upload-processing-title-v1-11-0");
-        if (title) {
-            title.textContent = "Processing file";
-        }
-
-        const subtitle = shell.querySelector(".costerly-upload-processing-subtitle-v1-11-0");
-        if (subtitle) {
-            subtitle.textContent = "We’re analyzing your RFQ package and preparing the detected objects.";
-        }
-
-        const card = shell.querySelector(".costerly-upload-processing-card-v1-11-0");
-        if (card && !card.querySelector(".costerly-legacy-progress-track-v1-11-2")) {
-            const progress = doc.createElement("div");
-            progress.className = "costerly-legacy-progress-track-v1-11-2";
-            progress.innerHTML = '<div class="costerly-legacy-progress-fill-v1-11-2"></div>';
-
-            const step = doc.createElement("p");
-            step.className = "costerly-legacy-step-v1-11-2";
-            step.textContent = "Receiving file";
-
-            const timeout = card.querySelector(".costerly-upload-processing-timeout-v1-11-0");
-            if (timeout) {
-                card.insertBefore(progress, timeout);
-                card.insertBefore(step, timeout);
-            } else {
-                card.appendChild(progress);
-                card.appendChild(step);
-            }
-        }
-
-        return true;
-    }
-
-    if (!doc[INSTALLED_FLAG]) {
-        doc[INSTALLED_FLAG] = true;
-
-        const observer = new MutationObserver(function () {
-            rewriteLegacyShell();
-        });
-
-        observer.observe(doc.body, {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
-
-        parentWindow.setInterval(rewriteLegacyShell, 120);
-    }
-
-    rewriteLegacyShell();
-
-    console.debug("[Costerly] Legacy Preparing shell rewriter installed", VERSION);
-})();
-</script>
-        """,
-        height=0,
-        width=0,
-    )
-# === COSTERLY_UPLOAD_LEGACY_PREPARING_REWRITER_V1_11_2_END ===
+# === COSTERLY_UPLOAD_PIXEL_PROCESSING_SHELL_V1_11_3_END ===
 
 def install_upload_clear_processing_ghost_state_v1_9_27():
     costerly_component_html_js_runner_v1_9_34(
@@ -1323,8 +1136,7 @@ def render_upload_screen(company_id=None):
     st.markdown('</div>', unsafe_allow_html=True)
 
     install_custom_upload_dragover_js_v1_9()
-    install_upload_early_processing_screen_shell_v1_11_1()
-    install_upload_legacy_preparing_rewriter_v1_11_2()
+    install_upload_pixel_processing_shell_v1_11_3()
 
 
     uploaded_file = st.file_uploader(
@@ -1353,13 +1165,6 @@ def render_upload_screen(company_id=None):
 
         st.session_state.screen = "processing"
         st.rerun()
-
-
-
-
-
-
-
 
 
 # ============================================================
