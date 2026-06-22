@@ -11,6 +11,32 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
+from streamlit.components.v1 import html as costerly_component_html_v1_9_34
+# ============================================================
+# REGRESSION LOCK v1.9.34 — COMPONENT HTML JS RUNNER FOR PROD
+#
+# DO NOT REMOVE WITHOUT MANUAL TESTING.
+#
+# Restores iframe-based JS execution for production.
+# v1.9.29 st.html runner removed warning logs but did not reliably
+# run the DOM guards in fresh prod sessions:
+# - dragover lilac plus did not appear
+# - processing ghost elements were visible again
+#
+# Required tests:
+# 1. First upload screen: upload block visible.
+# 2. Drag file over upload block: lilac state + white plus visible.
+# 3. Upload file → processing: ghost hero/uploader elements hidden.
+# 4. Back → upload screen: upload block visible again.
+# ============================================================
+# === COSTERLY_COMPONENT_HTML_JS_RUNNER_V1_9_34_START ===
+def costerly_component_html_js_runner_v1_9_34(html_source: str, **kwargs):
+    costerly_component_html_v1_9_34(
+        html_source,
+        height=kwargs.get("height", 0),
+        width=kwargs.get("width", 0),
+    )
+# === COSTERLY_COMPONENT_HTML_JS_RUNNER_V1_9_34_END ===
 # ============================================================
 # REGRESSION LOCK v1.9.29 — JS HTML RUNNER WITHOUT COMPONENTS.HTML
 #
@@ -28,13 +54,6 @@ import streamlit as st
 # 3. Processing screen: ghost hero/uploader elements hidden.
 # 4. Back → upload screen: upload block visible again.
 # ============================================================
-# === COSTERLY_HTML_JS_RUNNER_V1_9_29_START ===
-def costerly_html_js_runner_v1_9_29(html_source: str, **_ignored_kwargs):
-    st.html(
-        html_source,
-        unsafe_allow_javascript=True,
-    )
-# === COSTERLY_HTML_JS_RUNNER_V1_9_29_END ===
 
 from agents.detection_agent import run_detection_agent
 from db.supabase_client import get_supabase_client
@@ -238,7 +257,7 @@ def detect_uploaded_file_type(file_name: str) -> str:
 # First screen: minimal RFQ package upload.
 # === COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_START ===
 def install_custom_upload_dragover_js_v1_9():
-    costerly_html_js_runner_v1_9_29(
+    costerly_component_html_js_runner_v1_9_34(
         """
 <script>
 (() => {
@@ -397,7 +416,7 @@ def install_custom_upload_dragover_js_v1_9():
 
 # === COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_STATE_V1_9_27_START ===
 def install_upload_clear_processing_ghost_state_v1_9_27():
-    costerly_html_js_runner_v1_9_29(
+    costerly_component_html_js_runner_v1_9_34(
         """
 <script>
 (() => {
@@ -462,7 +481,7 @@ def install_processing_ghost_guard_v1_9_27():
         unsafe_allow_html=True,
     )
 
-    costerly_html_js_runner_v1_9_29(
+    costerly_component_html_js_runner_v1_9_34(
         """
 <script>
 (() => {
