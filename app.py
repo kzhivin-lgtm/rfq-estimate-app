@@ -1130,8 +1130,393 @@ def format_dimensions(value) -> str:
     )
 
 
+# === COSTERLY_FILE_REVIEW_CARD_LAYOUT_V1_9_36_START ===
+def _html_escape_v1_9_36(value) -> str:
+    from html import escape
+
+    if _is_empty_value(value):
+        return "—"
+
+    return escape(str(value).strip())
+
+
+def _display_value_v1_9_36(value, fallback: str = "—") -> str:
+    if _is_empty_value(value):
+        return fallback
+
+    return str(value).strip()
+
+
+def _file_stem_v1_9_36(file_name) -> str:
+    if _is_empty_value(file_name):
+        return ""
+
+    try:
+        return Path(str(file_name)).stem.strip()
+    except Exception:
+        return str(file_name).strip()
+
+
+def _file_review_project_name_v1_9_36(run: dict, objects_df: pd.DataFrame) -> str:
+    for key in ["project_name", "project_title", "rfq_name"]:
+        value = _display_value_v1_9_36(run.get(key), "")
+        if value:
+            return value
+
+    if objects_df is not None and not objects_df.empty and "object_name" in objects_df.columns:
+        value = _display_value_v1_9_36(objects_df.iloc[0].get("object_name"), "")
+        if value:
+            return value
+
+    for key in ["file_name", "uploaded_filename"]:
+        value = _file_stem_v1_9_36(run.get(key))
+        if value:
+            return value
+
+    value = _file_stem_v1_9_36(st.session_state.get("uploaded_filename"))
+    if value:
+        return value
+
+    return "Untitled project"
+
+
+def _file_review_partner_v1_9_36(run: dict) -> str:
+    # Prefer architect / bureau / design-side fields when present.
+    # Fall back to direct client fields. This is UI-only; no prompt/schema change yet.
+    partner_keys = [
+        "architecture_bureau",
+        "architectural_bureau",
+        "architect_bureau",
+        "architect_name",
+        "designer_name",
+        "design_partner",
+        "client_or_design_partner",
+        "client_name",
+        "customer_name",
+        "author",
+    ]
+
+    for key in partner_keys:
+        value = _display_value_v1_9_36(run.get(key), "")
+        if value:
+            return value
+
+    return "Not detected"
+
+
+def _compact_missing_information_html_v1_9_36(value) -> str:
+    points = split_text_to_points(value)
+
+    if not points:
+        return (
+            "<div class='file-review-empty-v1-9-36'>"
+            "No major missing information detected."
+            "</div>"
+        )
+
+    items = "".join(
+        f"<li>{_html_escape_v1_9_36(point)}</li>"
+        for point in points
+    )
+
+    return f"<ul class='file-review-missing-list-v1-9-36'>{items}</ul>"
+
+
+def _metadata_table_html_v1_9_36(rows: list[tuple[str, object]]) -> str:
+    body = "".join(
+        "<tr>"
+        f"<td>{_html_escape_v1_9_36(label)}</td>"
+        f"<td>{_html_escape_v1_9_36(value)}</td>"
+        "</tr>"
+        for label, value in rows
+    )
+
+    return f"<table class='file-review-metadata-table-v1-9-36'>{body}</table>"
+
+
+# === COSTERLY_FILE_REVIEW_V1_10_3_START ===
+def apply_file_review_v1_10_3_css() -> None:
+    """Apply File Review-specific typography and compact metadata styles."""
+    st.markdown(
+        """
+<style>
+/* ============================================================
+   COSTERLY_FILE_REVIEW_V1_10_3
+
+   Scope:
+   - File Review white review card.
+   - Top summary fields.
+   - Missing information block.
+   - Compact technical metadata.
+   ============================================================ */
+
+.file-review-card-v1-10-3 {
+    width: 100%;
+    background: #FFFFFF;
+    border: 1px solid rgba(42, 31, 44, 0.14);
+    border-radius: 16px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.055);
+    padding: 32px 34px 26px 34px;
+    box-sizing: border-box;
+    color: #2A1F2C;
+}
+
+.file-review-summary-grid-v1-10-3 {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    column-gap: 28px;
+    row-gap: 14px;
+    align-items: baseline;
+}
+
+.file-review-label-v1-10-3 {
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(42, 31, 44, 0.54);
+}
+
+.file-review-value-v1-10-3 {
+    font-size: 18px;
+    line-height: 1.28;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #2A1F2C;
+}
+
+.file-review-divider-v1-10-3 {
+    height: 1px;
+    background: rgba(42, 31, 44, 0.14);
+    margin: 24px 0 20px 0;
+}
+
+.file-review-section-title-v1-10-3 {
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(42, 31, 44, 0.58);
+    margin: 0 0 10px 0;
+}
+
+.file-review-missing-list-v1-10-3 {
+    margin: 0 0 0 22px;
+    padding: 0;
+    color: #2A1F2C;
+}
+
+.file-review-missing-list-v1-10-3 li {
+    font-size: 16px;
+    line-height: 1.42;
+    margin: 3px 0;
+    padding-left: 2px;
+}
+
+.file-review-muted-v1-10-3 {
+    font-size: 16px;
+    line-height: 1.42;
+    color: rgba(42, 31, 44, 0.58);
+}
+
+.file-review-meta-details-v1-10-3 {
+    margin-top: 0;
+}
+
+.file-review-meta-summary-v1-10-3 {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+.file-review-meta-summary-v1-10-3::-webkit-details-marker {
+    display: none;
+}
+
+.file-review-meta-summary-v1-10-3::before {
+    content: "▾";
+    font-size: 28px;
+    line-height: 1;
+    color: rgba(42, 31, 44, 0.60);
+    transform: translateY(-1px);
+}
+
+.file-review-meta-details-v1-10-3:not([open]) .file-review-meta-summary-v1-10-3::before {
+    content: "▸";
+}
+
+.file-review-meta-title-v1-10-3 {
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: rgba(42, 31, 44, 0.58);
+}
+
+.file-review-meta-table-v1-10-3 {
+    margin-top: 12px;
+    border-top: 1px solid rgba(42, 31, 44, 0.10);
+}
+
+.file-review-meta-row-v1-10-3 {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    column-gap: 14px;
+    min-height: 27px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(42, 31, 44, 0.08);
+    align-items: center;
+}
+
+.file-review-meta-key-v1-10-3 {
+    font-size: 14px;
+    line-height: 1.2;
+    color: rgba(42, 31, 44, 0.52);
+}
+
+.file-review-meta-value-v1-10-3 {
+    font-size: 14px;
+    line-height: 1.2;
+    color: #2A1F2C;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .file-review-card-v1-10-3 {
+        padding: 26px 22px 24px 22px;
+    }
+
+    .file-review-summary-grid-v1-10-3,
+    .file-review-meta-row-v1-10-3 {
+        grid-template-columns: 1fr;
+        row-gap: 4px;
+    }
+
+    .file-review-value-v1-10-3 {
+        font-size: 17px;
+    }
+}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _file_review_html_escape_v1_10_3(value) -> str:
+    """Return a safe text representation for File Review HTML rendering."""
+    import html as _html
+
+    if _is_empty_value(value):
+        return "—"
+
+    return _html.escape(str(value))
+
+
+def _file_review_missing_html_v1_10_3(value) -> str:
+    """Render missing information as compact HTML bullets."""
+    import html as _html
+
+    points = split_text_to_points(value)
+
+    if not points:
+        return "<div class='file-review-muted-v1-10-3'>No major missing information detected.</div>"
+
+    items = "".join(
+        f"<li>{_html.escape(str(point))}</li>"
+        for point in points
+    )
+
+    return f"<ul class='file-review-missing-list-v1-10-3'>{items}</ul>"
+
+
+def _file_review_metadata_rows_html_v1_10_3(rows: list[tuple[str, object]]) -> str:
+    """Render compact technical metadata rows without Streamlit dataframe spacing."""
+    row_html = []
+
+    for key, value in rows:
+        row_html.append(
+            "<div class='file-review-meta-row-v1-10-3'>"
+            f"<div class='file-review-meta-key-v1-10-3'>{_file_review_html_escape_v1_10_3(key)}</div>"
+            f"<div class='file-review-meta-value-v1-10-3'>{_file_review_html_escape_v1_10_3(value)}</div>"
+            "</div>"
+        )
+
+    return "".join(row_html)
+
+
+def render_file_review_card_v1_10_3(run: dict) -> None:
+    """Render the top File Review card: summary, missing info and compact metadata."""
+    project_name = run.get("project_name", "—")
+    partner = run.get("client_or_design_partner", "Not detected")
+    file_quality = run.get("file_quality_label", "—")
+
+    metadata_rows = [
+        ("Project name", run.get("project_name", "—")),
+        ("Partner", run.get("client_or_design_partner", "Not detected")),
+        ("File name", run.get("file_name", "—")),
+        ("Pages detected", run.get("pages_detected", 0)),
+        ("Source type", run.get("source_type", "—")),
+        ("Author", run.get("author", "—")),
+        ("Document date", run.get("document_date", "—")),
+        ("Language", run.get("language", "—")),
+        ("File quality confidence", format_confidence(run.get("file_quality_confidence", 0))),
+        ("Run ID", run.get("run_id", "—")),
+        ("Status", run.get("status", "—")),
+    ]
+
+    missing_html = _file_review_missing_html_v1_10_3(
+        run.get("missing_information", "none")
+    )
+
+    metadata_html = _file_review_metadata_rows_html_v1_10_3(metadata_rows)
+
+    st.html(
+        f"""
+<div class="file-review-card-v1-10-3">
+    <div class="file-review-summary-grid-v1-10-3">
+        <div class="file-review-label-v1-10-3">Project name:</div>
+        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(project_name)}</div>
+
+        <div class="file-review-label-v1-10-3">Partner:</div>
+        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(partner)}</div>
+
+        <div class="file-review-label-v1-10-3">File quality:</div>
+        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(file_quality)}</div>
+    </div>
+
+    <div class="file-review-divider-v1-10-3"></div>
+
+    <div class="file-review-section-title-v1-10-3">Missing information:</div>
+    {missing_html}
+
+    <div class="file-review-divider-v1-10-3"></div>
+
+    <details class="file-review-meta-details-v1-10-3">
+        <summary class="file-review-meta-summary-v1-10-3">
+            <span class="file-review-meta-title-v1-10-3">Technical metadata:</span>
+        </summary>
+
+        <div class="file-review-meta-table-v1-10-3">
+            {metadata_html}
+        </div>
+    </details>
+</div>
+        """
+    )
+# === COSTERLY_FILE_REVIEW_V1_10_3_END ===
+
 def render_file_review_screen(company_id: str):
     render_post_upload_header("File Review")
+    apply_file_review_v1_10_3_css()
 
     client = get_supabase_client()
     run_id = st.session_state.get("current_run_id") or "RA-N01_run_001"
@@ -1147,38 +1532,7 @@ def render_file_review_screen(company_id: str):
 
     run = run_df.iloc[0].to_dict()
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Project", run.get("project_name", "—"))
-    col2.metric("Pages", run.get("pages_detected", 0))
-    col3.metric("File quality", run.get("file_quality_label", "—"))
-
-    st.divider()
-
-    st.subheader("Missing information")
-    render_bullets(
-        run.get("missing_information", "none"),
-        empty_text="No major missing information detected.",
-    )
-
-    with st.expander("Technical metadata", expanded=False):
-        metadata_rows = [
-            ("Project name", run.get("project_name", "—")),
-            ("File name", run.get("file_name", "—")),
-            ("Source type", run.get("source_type", "—")),
-            ("Design partner", run.get("client_or_design_partner", "—")),
-            ("Author", run.get("author", "—")),
-            ("Document date", run.get("document_date", "—")),
-            ("Language", run.get("language", "—")),
-            ("File quality confidence", format_confidence(run.get("file_quality_confidence", 0))),
-            ("Run ID", run.get("run_id", "—")),
-            ("Status", run.get("status", "—")),
-        ]
-
-        st.dataframe(
-            pd.DataFrame(metadata_rows, columns=["Field", "Value"]),
-            width="stretch",
-            hide_index=True,
-        )
+    render_file_review_card_v1_10_3(run)
 
     st.divider()
 
