@@ -776,6 +776,173 @@ def install_upload_early_processing_screen_shell_v1_11_1() -> None:
     )
 # === COSTERLY_UPLOAD_EARLY_PROCESSING_SCREEN_SHELL_V1_11_1_END ===
 
+# === COSTERLY_UPLOAD_LEGACY_PREPARING_REWRITER_V1_11_2_START ===
+def install_upload_legacy_preparing_rewriter_v1_11_2() -> None:
+    """
+    v1.11.2: rewrite/remove legacy v1.11.0 Preparing shell if it appears.
+
+    Why:
+    Existing browser tabs can keep old anonymous JS listeners from v1.11.0.
+    We cannot directly remove those listeners, but we can immediately rewrite
+    their DOM after they create the old shell.
+
+    Regression lock:
+    - Client-side only.
+    - Does not change st.session_state.screen.
+    - Does not start backend processing.
+    - Does not touch v1.9.27/v1.9.34 guards.
+    """
+    costerly_component_html_js_runner_v1_9_34(
+        """
+<script>
+(function () {
+    const VERSION = "v1.11.2";
+    const LEGACY_SHELL_ID = "costerly-upload-processing-shell-v1-11-0";
+    const STYLE_ID = "costerly-upload-legacy-preparing-rewriter-style-v1-11-2";
+    const INSTALLED_FLAG = "__costerlyUploadLegacyPreparingRewriterV1112Installed";
+
+    const parentWindow = window.parent || window;
+    const doc = parentWindow.document;
+
+    if (!doc || !doc.body) {
+        return;
+    }
+
+    function installStyle() {
+        if (doc.getElementById(STYLE_ID)) {
+            return;
+        }
+
+        const style = doc.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            #${LEGACY_SHELL_ID} {
+                background: #F1EFEF !important;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-upload-processing-card-v1-11-0 {
+                width: min(760px, calc(100vw - 44px)) !important;
+                min-height: 0 !important;
+                background: transparent !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-upload-processing-title-v1-11-0 {
+                font-size: 40px !important;
+                line-height: 1.08 !important;
+                font-weight: 760 !important;
+                letter-spacing: -0.05em !important;
+                color: #2A1F2C !important;
+                margin: 0 0 14px 0 !important;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-upload-processing-subtitle-v1-11-0 {
+                font-size: 17px !important;
+                line-height: 1.45 !important;
+                color: rgba(42, 31, 44, 0.66) !important;
+                margin: 0 0 34px 0 !important;
+                max-width: 560px !important;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-legacy-progress-track-v1-11-2 {
+                width: min(520px, 100%);
+                height: 10px;
+                border-radius: 999px;
+                background: rgba(42, 31, 44, 0.10);
+                overflow: hidden;
+                margin: 0 auto 16px auto;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-legacy-progress-fill-v1-11-2 {
+                height: 100%;
+                width: 6%;
+                border-radius: 999px;
+                background: #8049C6;
+            }
+
+            #${LEGACY_SHELL_ID} .costerly-legacy-step-v1-11-2 {
+                font-size: 15px;
+                line-height: 1.35;
+                color: rgba(42, 31, 44, 0.70);
+                margin: 0;
+            }
+        `;
+
+        doc.head.appendChild(style);
+    }
+
+    function rewriteLegacyShell() {
+        installStyle();
+
+        const shell = doc.getElementById(LEGACY_SHELL_ID);
+        if (!shell) {
+            return false;
+        }
+
+        shell.dataset.rewrittenByV1112 = "true";
+
+        const title = shell.querySelector(".costerly-upload-processing-title-v1-11-0");
+        if (title) {
+            title.textContent = "Processing file";
+        }
+
+        const subtitle = shell.querySelector(".costerly-upload-processing-subtitle-v1-11-0");
+        if (subtitle) {
+            subtitle.textContent = "We’re analyzing your RFQ package and preparing the detected objects.";
+        }
+
+        const card = shell.querySelector(".costerly-upload-processing-card-v1-11-0");
+        if (card && !card.querySelector(".costerly-legacy-progress-track-v1-11-2")) {
+            const progress = doc.createElement("div");
+            progress.className = "costerly-legacy-progress-track-v1-11-2";
+            progress.innerHTML = '<div class="costerly-legacy-progress-fill-v1-11-2"></div>';
+
+            const step = doc.createElement("p");
+            step.className = "costerly-legacy-step-v1-11-2";
+            step.textContent = "Receiving file";
+
+            const timeout = card.querySelector(".costerly-upload-processing-timeout-v1-11-0");
+            if (timeout) {
+                card.insertBefore(progress, timeout);
+                card.insertBefore(step, timeout);
+            } else {
+                card.appendChild(progress);
+                card.appendChild(step);
+            }
+        }
+
+        return true;
+    }
+
+    if (!doc[INSTALLED_FLAG]) {
+        doc[INSTALLED_FLAG] = true;
+
+        const observer = new MutationObserver(function () {
+            rewriteLegacyShell();
+        });
+
+        observer.observe(doc.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+
+        parentWindow.setInterval(rewriteLegacyShell, 120);
+    }
+
+    rewriteLegacyShell();
+
+    console.debug("[Costerly] Legacy Preparing shell rewriter installed", VERSION);
+})();
+</script>
+        """,
+        height=0,
+        width=0,
+    )
+# === COSTERLY_UPLOAD_LEGACY_PREPARING_REWRITER_V1_11_2_END ===
+
 def install_upload_clear_processing_ghost_state_v1_9_27():
     costerly_component_html_js_runner_v1_9_34(
         """
@@ -1157,6 +1324,7 @@ def render_upload_screen(company_id=None):
 
     install_custom_upload_dragover_js_v1_9()
     install_upload_early_processing_screen_shell_v1_11_1()
+    install_upload_legacy_preparing_rewriter_v1_11_2()
 
 
     uploaded_file = st.file_uploader(
