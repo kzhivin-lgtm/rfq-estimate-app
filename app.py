@@ -222,7 +222,47 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     )
 
 
+# === COSTERLY_POST_UPLOAD_VERTICAL_ALIGNMENT_V1_11_4_START ===
+def apply_post_upload_vertical_alignment_v1_11_4() -> None:
+    """
+    v1.11.4: lift real post-upload pages to match the v1.11.3 upload pixel shell.
+
+    Why:
+    The upload shell already starts at the desired vertical position.
+    The real processing screen starts lower, causing the title/progress to jump down
+    when Streamlit receives the file. We keep the shell position and raise the real
+    post-upload layout instead.
+
+    Scope:
+    - Applies to pages that render render_post_upload_header(...).
+    - Does not affect the v1.11.3 shell while it is active.
+    - Single tuning number: --costerly-post-upload-lift-v1-11-4.
+    """
+    st.markdown(
+        """
+<style>
+:root {
+    --costerly-post-upload-lift-v1-11-4: -36px;
+}
+
+/*
+v1.11.4:
+Lift real post-upload pages only.
+Do not apply this to the frontend upload shell while it is active, because
+the shell is already positioned correctly and is the visual reference point.
+*/
+body:not(.costerly-upload-pixel-processing-shell-active-v1-11-3) .post-upload-title {
+    margin-top: var(--costerly-post-upload-lift-v1-11-4) !important;
+}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+# === COSTERLY_POST_UPLOAD_VERTICAL_ALIGNMENT_V1_11_4_END ===
+
+
 def render_post_upload_header(title: str, subtitle: str | None = None) -> None:
+    apply_post_upload_vertical_alignment_v1_11_4()
     apply_post_upload_layout_css()
 
     st.markdown(
