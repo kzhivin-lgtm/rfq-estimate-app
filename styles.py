@@ -2368,6 +2368,21 @@ div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] 
   }
 }
 
+/* === COSTERLY_UPLOAD_VISIBILITY_SAFETY_V1_9_23_START === */
+
+/*
+  REGRESSION LOCK v1.9.23:
+  Upload screen must always render the upload block.
+  Do not hide div[data-testid="stFileUploader"] globally.
+*/
+div[data-testid="stFileUploader"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* === COSTERLY_UPLOAD_VISIBILITY_SAFETY_V1_9_23_END === */
+
 </style>
         """,
         unsafe_allow_html=True,
