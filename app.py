@@ -1489,6 +1489,32 @@ def render_dev_dashboard(company_id: str):
 # Main
 # -----------------------------------------------------------------------------
 
+# === COSTERLY_PROD_VERSION_MARKER_V1_9_35_START ===
+def render_prod_version_marker_v1_9_35():
+    st.markdown(
+        """
+        <div style="
+            position: fixed;
+            right: 10px;
+            bottom: 8px;
+            z-index: 999999;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 10px;
+            line-height: 1;
+            color: rgba(0,0,0,0.45);
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(0,0,0,0.10);
+            border-radius: 999px;
+            padding: 5px 7px;
+            pointer-events: none;
+        ">
+            v1.9.35 / commit a7105eb
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+# === COSTERLY_PROD_VERSION_MARKER_V1_9_35_END ===
+
 def main():
     init_state()
 
