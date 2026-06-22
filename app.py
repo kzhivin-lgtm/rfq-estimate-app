@@ -1234,14 +1234,14 @@ def _metadata_table_html_v1_9_36(rows: list[tuple[str, object]]) -> str:
     return f"<table class='file-review-metadata-table-v1-9-36'>{body}</table>"
 
 
-# === COSTERLY_FILE_REVIEW_V1_10_3_START ===
-def apply_file_review_v1_10_3_css() -> None:
+# === COSTERLY_FILE_REVIEW_V1_10_4_START ===
+def apply_file_review_v1_10_4_css() -> None:
     """Apply File Review-specific typography and compact metadata styles."""
     st.markdown(
         """
 <style>
 /* ============================================================
-   COSTERLY_FILE_REVIEW_V1_10_3
+   COSTERLY_FILE_REVIEW_V1_10_4
 
    Scope:
    - File Review white review card.
@@ -1250,7 +1250,7 @@ def apply_file_review_v1_10_3_css() -> None:
    - Compact technical metadata.
    ============================================================ */
 
-.file-review-card-v1-10-3 {
+.file-review-card-v1-10-4 {
     width: 100%;
     background: #FFFFFF;
     border: 1px solid rgba(42, 31, 44, 0.14);
@@ -1261,7 +1261,7 @@ def apply_file_review_v1_10_3_css() -> None:
     color: #2A1F2C;
 }
 
-.file-review-summary-grid-v1-10-3 {
+.file-review-summary-grid-v1-10-4 {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
     column-gap: 28px;
@@ -1269,7 +1269,7 @@ def apply_file_review_v1_10_3_css() -> None:
     align-items: baseline;
 }
 
-.file-review-label-v1-10-3 {
+.file-review-label-v1-10-4 {
     font-size: 18px;
     line-height: 1.25;
     font-weight: 700;
@@ -1278,7 +1278,7 @@ def apply_file_review_v1_10_3_css() -> None:
     color: rgba(42, 31, 44, 0.54);
 }
 
-.file-review-value-v1-10-3 {
+.file-review-value-v1-10-4 {
     font-size: 18px;
     line-height: 1.28;
     font-weight: 700;
@@ -1286,13 +1286,13 @@ def apply_file_review_v1_10_3_css() -> None:
     color: #2A1F2C;
 }
 
-.file-review-divider-v1-10-3 {
+.file-review-divider-v1-10-4 {
     height: 1px;
     background: rgba(42, 31, 44, 0.14);
     margin: 24px 0 20px 0;
 }
 
-.file-review-section-title-v1-10-3 {
+.file-review-section-title-v1-10-4 {
     font-size: 18px;
     line-height: 1.25;
     font-weight: 700;
@@ -1302,30 +1302,30 @@ def apply_file_review_v1_10_3_css() -> None:
     margin: 0 0 10px 0;
 }
 
-.file-review-missing-list-v1-10-3 {
+.file-review-missing-list-v1-10-4 {
     margin: 0 0 0 22px;
     padding: 0;
     color: #2A1F2C;
 }
 
-.file-review-missing-list-v1-10-3 li {
+.file-review-missing-list-v1-10-4 li {
     font-size: 16px;
     line-height: 1.42;
     margin: 3px 0;
     padding-left: 2px;
 }
 
-.file-review-muted-v1-10-3 {
+.file-review-muted-v1-10-4 {
     font-size: 16px;
     line-height: 1.42;
     color: rgba(42, 31, 44, 0.58);
 }
 
-.file-review-meta-details-v1-10-3 {
+.file-review-meta-details-v1-10-4 {
     margin-top: 0;
 }
 
-.file-review-meta-summary-v1-10-3 {
+.file-review-meta-summary-v1-10-4 {
     list-style: none;
     cursor: pointer;
     display: flex;
@@ -1336,11 +1336,11 @@ def apply_file_review_v1_10_3_css() -> None:
     user-select: none;
 }
 
-.file-review-meta-summary-v1-10-3::-webkit-details-marker {
+.file-review-meta-summary-v1-10-4::-webkit-details-marker {
     display: none;
 }
 
-.file-review-meta-summary-v1-10-3::before {
+.file-review-meta-summary-v1-10-4::before {
     content: "▾";
     font-size: 28px;
     line-height: 1;
@@ -1348,11 +1348,11 @@ def apply_file_review_v1_10_3_css() -> None:
     transform: translateY(-1px);
 }
 
-.file-review-meta-details-v1-10-3:not([open]) .file-review-meta-summary-v1-10-3::before {
+.file-review-meta-details-v1-10-4:not([open]) .file-review-meta-summary-v1-10-4::before {
     content: "▸";
 }
 
-.file-review-meta-title-v1-10-3 {
+.file-review-meta-title-v1-10-4 {
     font-size: 18px;
     line-height: 1.25;
     font-weight: 700;
@@ -1361,12 +1361,12 @@ def apply_file_review_v1_10_3_css() -> None:
     color: rgba(42, 31, 44, 0.58);
 }
 
-.file-review-meta-table-v1-10-3 {
+.file-review-meta-table-v1-10-4 {
     margin-top: 12px;
     border-top: 1px solid rgba(42, 31, 44, 0.10);
 }
 
-.file-review-meta-row-v1-10-3 {
+.file-review-meta-row-v1-10-4 {
     display: grid;
     grid-template-columns: 190px minmax(0, 1fr);
     column-gap: 14px;
@@ -1376,13 +1376,13 @@ def apply_file_review_v1_10_3_css() -> None:
     align-items: center;
 }
 
-.file-review-meta-key-v1-10-3 {
+.file-review-meta-key-v1-10-4 {
     font-size: 14px;
     line-height: 1.2;
     color: rgba(42, 31, 44, 0.52);
 }
 
-.file-review-meta-value-v1-10-3 {
+.file-review-meta-value-v1-10-4 {
     font-size: 14px;
     line-height: 1.2;
     color: #2A1F2C;
@@ -1390,18 +1390,112 @@ def apply_file_review_v1_10_3_css() -> None:
     overflow-wrap: anywhere;
 }
 
+
+.file-review-detected-title-v1-10-4 {
+    font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
+    color: #8049C6 !important;
+    font-size: 40px !important;
+    line-height: 1.1 !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.02em !important;
+    margin: 48px 0 24px 0 !important;
+    padding: 0 !important;
+}
+
+.file-review-object-card-v1-10-4 {
+    width: 100%;
+    background: #FFFFFF;
+    border: 1px solid rgba(42, 31, 44, 0.14);
+    border-radius: 16px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.055);
+    padding: 28px 34px 26px 34px;
+    box-sizing: border-box;
+    color: #2A1F2C;
+    margin: 0 0 20px 0;
+}
+
+.file-review-object-top-v1-10-4 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 110px 130px;
+    column-gap: 34px;
+    align-items: start;
+    margin-bottom: 28px;
+}
+
+.file-review-object-name-v1-10-4 {
+    font-size: 28px;
+    line-height: 1.18;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    color: #17131C;
+}
+
+.file-review-object-metric-label-v1-10-4 {
+    font-size: 13px;
+    line-height: 1.2;
+    color: rgba(42, 31, 44, 0.62);
+    margin-bottom: 6px;
+}
+
+.file-review-object-metric-value-v1-10-4 {
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 500;
+    color: #111111;
+}
+
+.file-review-object-grid-v1-10-4 {
+    display: grid;
+    grid-template-columns: 1fr 1.45fr;
+    column-gap: 44px;
+    row-gap: 20px;
+    margin-bottom: 18px;
+}
+
+.file-review-object-field-label-v1-10-4 {
+    font-size: 14px;
+    line-height: 1.2;
+    color: rgba(42, 31, 44, 0.52);
+    margin-bottom: 12px;
+}
+
+.file-review-object-field-value-v1-10-4 {
+    font-size: 16px;
+    line-height: 1.42;
+    color: #2A1F2C;
+}
+
+.file-review-object-notes-title-v1-10-4 {
+    font-size: 14px;
+    line-height: 1.2;
+    color: rgba(42, 31, 44, 0.52);
+    margin: 18px 0 10px 0;
+}
+
+.file-review-object-notes-list-v1-10-4 {
+    margin: 0 0 0 22px;
+    padding: 0;
+    color: #2A1F2C;
+}
+
+.file-review-object-notes-list-v1-10-4 li {
+    font-size: 16px;
+    line-height: 1.45;
+    margin: 8px 0;
+}
+
 @media (max-width: 760px) {
-    .file-review-card-v1-10-3 {
+    .file-review-card-v1-10-4 {
         padding: 26px 22px 24px 22px;
     }
 
-    .file-review-summary-grid-v1-10-3,
-    .file-review-meta-row-v1-10-3 {
+    .file-review-summary-grid-v1-10-4,
+    .file-review-meta-row-v1-10-4 {
         grid-template-columns: 1fr;
         row-gap: 4px;
     }
 
-    .file-review-value-v1-10-3 {
+    .file-review-value-v1-10-4 {
         font-size: 17px;
     }
 }
@@ -1411,7 +1505,7 @@ def apply_file_review_v1_10_3_css() -> None:
     )
 
 
-def _file_review_html_escape_v1_10_3(value) -> str:
+def _file_review_html_escape_v1_10_4(value) -> str:
     """Return a safe text representation for File Review HTML rendering."""
     import html as _html
 
@@ -1421,39 +1515,39 @@ def _file_review_html_escape_v1_10_3(value) -> str:
     return _html.escape(str(value))
 
 
-def _file_review_missing_html_v1_10_3(value) -> str:
+def _file_review_missing_html_v1_10_4(value) -> str:
     """Render missing information as compact HTML bullets."""
     import html as _html
 
     points = split_text_to_points(value)
 
     if not points:
-        return "<div class='file-review-muted-v1-10-3'>No major missing information detected.</div>"
+        return "<div class='file-review-muted-v1-10-4'>No major missing information detected.</div>"
 
     items = "".join(
         f"<li>{_html.escape(str(point))}</li>"
         for point in points
     )
 
-    return f"<ul class='file-review-missing-list-v1-10-3'>{items}</ul>"
+    return f"<ul class='file-review-missing-list-v1-10-4'>{items}</ul>"
 
 
-def _file_review_metadata_rows_html_v1_10_3(rows: list[tuple[str, object]]) -> str:
+def _file_review_metadata_rows_html_v1_10_4(rows: list[tuple[str, object]]) -> str:
     """Render compact technical metadata rows without Streamlit dataframe spacing."""
     row_html = []
 
     for key, value in rows:
         row_html.append(
-            "<div class='file-review-meta-row-v1-10-3'>"
-            f"<div class='file-review-meta-key-v1-10-3'>{_file_review_html_escape_v1_10_3(key)}</div>"
-            f"<div class='file-review-meta-value-v1-10-3'>{_file_review_html_escape_v1_10_3(value)}</div>"
+            "<div class='file-review-meta-row-v1-10-4'>"
+            f"<div class='file-review-meta-key-v1-10-4'>{_file_review_html_escape_v1_10_4(key)}</div>"
+            f"<div class='file-review-meta-value-v1-10-4'>{_file_review_html_escape_v1_10_4(value)}</div>"
             "</div>"
         )
 
     return "".join(row_html)
 
 
-def render_file_review_card_v1_10_3(run: dict) -> None:
+def render_file_review_card_v1_10_4(run: dict) -> None:
     """Render the top File Review card: summary, missing info and compact metadata."""
     project_name = run.get("project_name", "—")
     partner = run.get("client_or_design_partner", "Not detected")
@@ -1473,50 +1567,115 @@ def render_file_review_card_v1_10_3(run: dict) -> None:
         ("Status", run.get("status", "—")),
     ]
 
-    missing_html = _file_review_missing_html_v1_10_3(
+    missing_html = _file_review_missing_html_v1_10_4(
         run.get("missing_information", "none")
     )
 
-    metadata_html = _file_review_metadata_rows_html_v1_10_3(metadata_rows)
+    metadata_html = _file_review_metadata_rows_html_v1_10_4(metadata_rows)
 
     st.html(
         f"""
-<div class="file-review-card-v1-10-3">
-    <div class="file-review-summary-grid-v1-10-3">
-        <div class="file-review-label-v1-10-3">Project name:</div>
-        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(project_name)}</div>
+<div class="file-review-card-v1-10-4">
+    <div class="file-review-summary-grid-v1-10-4">
+        <div class="file-review-label-v1-10-4">Project name:</div>
+        <div class="file-review-value-v1-10-4">{_file_review_html_escape_v1_10_4(project_name)}</div>
 
-        <div class="file-review-label-v1-10-3">Partner:</div>
-        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(partner)}</div>
+        <div class="file-review-label-v1-10-4">Partner:</div>
+        <div class="file-review-value-v1-10-4">{_file_review_html_escape_v1_10_4(partner)}</div>
 
-        <div class="file-review-label-v1-10-3">File quality:</div>
-        <div class="file-review-value-v1-10-3">{_file_review_html_escape_v1_10_3(file_quality)}</div>
+        <div class="file-review-label-v1-10-4">File quality:</div>
+        <div class="file-review-value-v1-10-4">{_file_review_html_escape_v1_10_4(file_quality)}</div>
     </div>
 
-    <div class="file-review-divider-v1-10-3"></div>
+    <div class="file-review-divider-v1-10-4"></div>
 
-    <div class="file-review-section-title-v1-10-3">Missing information:</div>
+    <div class="file-review-section-title-v1-10-4">Missing information:</div>
     {missing_html}
 
-    <div class="file-review-divider-v1-10-3"></div>
+    <div class="file-review-divider-v1-10-4"></div>
 
-    <details class="file-review-meta-details-v1-10-3">
-        <summary class="file-review-meta-summary-v1-10-3">
-            <span class="file-review-meta-title-v1-10-3">Technical metadata:</span>
+    <details class="file-review-meta-details-v1-10-4">
+        <summary class="file-review-meta-summary-v1-10-4">
+            <span class="file-review-meta-title-v1-10-4">Technical metadata:</span>
         </summary>
 
-        <div class="file-review-meta-table-v1-10-3">
+        <div class="file-review-meta-table-v1-10-4">
             {metadata_html}
         </div>
     </details>
 </div>
         """
     )
-# === COSTERLY_FILE_REVIEW_V1_10_3_END ===
+def _file_review_notes_html_v1_10_4(value) -> str:
+    """Render detected-object notes as compact HTML bullets."""
+    import html as _html
+
+    points = split_text_to_points(value)
+
+    if not points:
+        return ""
+
+    items = "".join(
+        f"<li>{_html.escape(str(point))}</li>"
+        for point in points
+    )
+
+    return (
+        "<div class='file-review-object-notes-title-v1-10-4'>Notes</div>"
+        f"<ul class='file-review-object-notes-list-v1-10-4'>{items}</ul>"
+    )
+
+
+def render_detected_object_card_v1_10_4(row) -> None:
+    """Render one detected object as a white card aligned with File Review styling."""
+    object_name = row.get("object_name", "Unknown object")
+    quantity = format_quantity(row)
+    confidence = format_confidence(row.get("confidence", 0))
+    dimensions = format_dimensions(row.get("dimensions_json", {}))
+
+    materials = row.get("detected_materials", "unknown")
+    materials_text = "—" if _is_empty_value(materials) else materials
+
+    notes_html = _file_review_notes_html_v1_10_4(row.get("notes", "none"))
+
+    st.html(
+        f"""
+<div class="file-review-object-card-v1-10-4">
+    <div class="file-review-object-top-v1-10-4">
+        <div class="file-review-object-name-v1-10-4">{_file_review_html_escape_v1_10_4(object_name)}</div>
+
+        <div>
+            <div class="file-review-object-metric-label-v1-10-4">Qty</div>
+            <div class="file-review-object-metric-value-v1-10-4">{_file_review_html_escape_v1_10_4(quantity)}</div>
+        </div>
+
+        <div>
+            <div class="file-review-object-metric-label-v1-10-4">Confidence</div>
+            <div class="file-review-object-metric-value-v1-10-4">{_file_review_html_escape_v1_10_4(confidence)}</div>
+        </div>
+    </div>
+
+    <div class="file-review-object-grid-v1-10-4">
+        <div>
+            <div class="file-review-object-field-label-v1-10-4">Dimensions</div>
+            <div class="file-review-object-field-value-v1-10-4">{_file_review_html_escape_v1_10_4(dimensions)}</div>
+        </div>
+
+        <div>
+            <div class="file-review-object-field-label-v1-10-4">Materials</div>
+            <div class="file-review-object-field-value-v1-10-4">{_file_review_html_escape_v1_10_4(materials_text)}</div>
+        </div>
+    </div>
+
+    {notes_html}
+</div>
+        """
+    )
+# === COSTERLY_FILE_REVIEW_V1_10_4_END ===
 
 def render_file_review_screen(company_id: str):
     render_post_upload_header("File Review")
-    apply_file_review_v1_10_3_css()
+    apply_file_review_v1_10_4_css()
 
     client = get_supabase_client()
     run_id = st.session_state.get("current_run_id") or "RA-N01_run_001"
@@ -1532,38 +1691,15 @@ def render_file_review_screen(company_id: str):
 
     run = run_df.iloc[0].to_dict()
 
-    render_file_review_card_v1_10_3(run)
+    render_file_review_card_v1_10_4(run)
 
-    st.divider()
-
-    st.subheader("Detected objects")
+    st.html("<h1 class='file-review-detected-title-v1-10-4'>Detected objects</h1>")
 
     if objects_df.empty:
         st.warning("No objects detected.")
     else:
         for _, row in objects_df.iterrows():
-            with st.container(border=True):
-                top_left, top_mid, top_right = st.columns([5, 1, 1])
-
-                top_left.subheader(row.get("object_name", "Unknown object"))
-                top_mid.metric("Qty", format_quantity(row))
-                top_right.metric("Confidence", format_confidence(row.get("confidence", 0)))
-
-                dim_col, mat_col = st.columns([2, 3])
-
-                with dim_col:
-                    st.caption("Dimensions")
-                    st.write(format_dimensions(row.get("dimensions_json", {})))
-
-                with mat_col:
-                    st.caption("Materials")
-                    materials = row.get("detected_materials", "unknown")
-                    st.write("—" if _is_empty_value(materials) else materials)
-
-                notes = row.get("notes", "none")
-                if not _is_empty_value(notes):
-                    st.caption("Notes")
-                    render_bullets(notes, empty_text="—")
+            render_detected_object_card_v1_10_4(row)
 
     col_back, col_next = st.columns(2)
 
