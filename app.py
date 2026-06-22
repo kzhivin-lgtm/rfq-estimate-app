@@ -309,7 +309,73 @@ def install_custom_upload_dragover_js_v1_9():
     )
 # === COSTERLY_CUSTOM_UPLOAD_DRAGOVER_JS_V1_9_END ===
 
+# ============================================================
+# REGRESSION LOCK v1.9.21 — UPLOAD SCREEN CLEARS PROCESSING GHOST GUARD
+#
+# DO NOT REMOVE WITHOUT MANUAL TESTING.
+#
+# This runs only on the upload screen.
+# It removes only v1.9.21 processing-hide classes.
+# It must NOT hide anything.
+#
+# Required tests:
+# - first upload screen: upload block visible
+# - upload file -> processing: upload ghosts hidden
+# - Back -> upload screen: upload block visible again
+# ============================================================
+# === COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_GUARD_V1_9_21_START ===
+def install_upload_clear_processing_ghost_guard_v1_9_21():
+    components.html(
+        """
+<script>
+(() => {
+  const parentDoc = window.parent.document;
+  const markerId = "COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_GUARD_V1_9_21";
+
+  const old = parentDoc.getElementById(markerId);
+  if (old) old.remove();
+
+  const script = parentDoc.createElement("script");
+  script.id = markerId;
+
+  script.textContent = `
+(() => {
+  const HIDDEN_CLASS = 'costerly-processing-ghost-hidden-v1-9-21';
+
+  function clearGuard() {
+    if (
+      window.__costerlyProcessingGhostGuardV1921 &&
+      typeof window.__costerlyProcessingGhostGuardV1921.clear === 'function'
+    ) {
+      window.__costerlyProcessingGhostGuardV1921.clear();
+    }
+
+    document
+      .querySelectorAll('.' + HIDDEN_CLASS + ', [data-costerly-processing-ghost-hidden-v1-9-21]')
+      .forEach((el) => {
+        el.classList.remove(HIDDEN_CLASS);
+        el.removeAttribute('data-costerly-processing-ghost-hidden-v1-9-21');
+      });
+  }
+
+  clearGuard();
+  window.setTimeout(clearGuard, 50);
+  window.setTimeout(clearGuard, 150);
+  window.setTimeout(clearGuard, 500);
+})();
+  `;
+
+  parentDoc.head.appendChild(script);
+})();
+</script>
+        """,
+        height=0,
+        width=0,
+    )
+# === COSTERLY_UPLOAD_CLEAR_PROCESSING_GHOST_GUARD_V1_9_21_END ===
+
 def render_upload_screen(company_id=None):
+    install_upload_clear_processing_ghost_guard_v1_9_21()
     st.markdown(
         """
         <style>
@@ -480,9 +546,210 @@ def render_upload_screen(company_id=None):
 
 
 
+# ============================================================
+# REGRESSION LOCK v1.9.21 — PROCESSING SCREEN GHOST GUARD
+#
+# DO NOT REMOVE WITHOUT MANUAL TESTING.
+#
+# Previous solved bug:
+# Processing screen showed dimmed remnants of the upload screen:
+# - AI estimating
+# - Quote request to proposal
+# - In minutes, not days
+# - Drop or upload / upload rectangle
+#
+# Previous regression:
+# A hard JS guard removed those ghosts but also kept hiding the
+# uploader after Back.
+#
+# v1.9.21 rule:
+# Hide ghosts ONLY while this processing marker exists:
+# #costerly-processing-screen-active-v1-9-21
+#
+# When the marker is absent, all v1.9.21 hiding is cleared.
+# ============================================================
+# === COSTERLY_PROCESSING_GHOST_GUARD_V1_9_21_START ===def install_processing_ghost_guard_v1_9_21():
+    st.markdown(
+        '<div id="costerly-processing-screen-active-v1-9-21" style="display:none"></div>',
+        unsafe_allow_html=True,
+    )
+
+    components.html(
+        """
+<script>
+(() => {
+  const parentDoc = window.parent.document;
+
+  const styleId = "COSTERLY_PROCESSING_GHOST_GUARD_V1_9_21_STYLE";
+  const scriptId = "COSTERLY_PROCESSING_GHOST_GUARD_V1_9_21_SCRIPT";
+
+  const oldStyle = parentDoc.getElementById(styleId);
+  if (oldStyle) oldStyle.remove();
+
+  const style = parentDoc.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    .costerly-processing-ghost-hidden-v1-9-21 {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+  `;
+  parentDoc.head.appendChild(style);
+
+  if (parentDoc.getElementById(scriptId)) {
+    if (
+      parentDoc.defaultView.__costerlyProcessingGhostGuardV1921 &&
+      typeof parentDoc.defaultView.__costerlyProcessingGhostGuardV1921.apply === 'function'
+    ) {
+      parentDoc.defaultView.__costerlyProcessingGhostGuardV1921.apply();
+    }
+    return;
+  }
+
+  const script = parentDoc.createElement("script");
+  script.id = scriptId;
+
+  script.textContent = `
+(() => {
+  const MARKER = '#costerly-processing-screen-active-v1-9-21';
+  const HIDDEN_CLASS = 'costerly-processing-ghost-hidden-v1-9-21';
+
+  const GHOST_TEXTS = [
+    'AI estimating',
+    'Quote request to proposal',
+    'In minutes, not days',
+    'Drop or upload'
+  ];
+
+  function norm(s) {
+    return (s || '').replace(/\\s+/g, ' ').trim();
+  }
+
+  function isProcessing() {
+    return Boolean(document.querySelector(MARKER));
+  }
+
+  function clear() {
+    document
+      .querySelectorAll('.' + HIDDEN_CLASS + ', [data-costerly-processing-ghost-hidden-v1-9-21]')
+      .forEach((el) => {
+        el.classList.remove(HIDDEN_CLASS);
+        el.removeAttribute('data-costerly-processing-ghost-hidden-v1-9-21');
+      });
+  }
+
+  function hide(el) {
+    if (!el) return;
+    el.classList.add(HIDDEN_CLASS);
+    el.setAttribute('data-costerly-processing-ghost-hidden-v1-9-21', 'true');
+  }
+
+  function containerForTextNode(node) {
+    const el = node && node.parentElement;
+    if (!el) return null;
+
+    const stElement = el.closest('div[data-testid="stElementContainer"]');
+    if (stElement) return stElement;
+
+    const md = el.closest('div[data-testid="stMarkdownContainer"]');
+    if (md) return md.closest('div[data-testid="stElementContainer"]') || md;
+
+    return el;
+  }
+
+  function hideTextGhosts() {
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const text = norm(node.nodeValue);
+          if (!text) return NodeFilter.FILTER_REJECT;
+
+          for (const ghost of GHOST_TEXTS) {
+            if (text === ghost || text.includes(ghost)) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          }
+
+          return NodeFilter.FILTER_REJECT;
+        }
+      }
+    );
+
+    const nodes = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      nodes.push(node);
+    }
+
+    nodes.forEach((node) => hide(containerForTextNode(node)));
+  }
+
+  function hideUploadWidgets() {
+    document
+      .querySelectorAll('div[data-testid="stFileUploader"], section[data-testid="stFileUploaderDropzone"]')
+      .forEach((el) => {
+        hide(el.closest('div[data-testid="stElementContainer"]') || el);
+      });
+  }
+
+  function apply() {
+    if (!isProcessing()) {
+      clear();
+      return;
+    }
+
+    hideTextGhosts();
+    hideUploadWidgets();
+  }
+
+  const obs = new MutationObserver(() => apply());
+
+  obs.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+
+  window.__costerlyProcessingGhostGuardV1921 = {
+    apply,
+    clear,
+    stop() {
+      try { obs.disconnect(); } catch (e) {}
+      clear();
+    }
+  };
+
+  apply();
+  window.setTimeout(apply, 50);
+  window.setTimeout(apply, 150);
+  window.setTimeout(apply, 500);
+  window.setTimeout(apply, 1000);
+})();
+  `;
+
+  parentDoc.head.appendChild(script);
+})();
+</script>
+        """,
+        height=0,
+        width=0,
+    )
+# === COSTERLY_PROCESSING_GHOST_GUARD_V1_9_21_END ===
+
 def render_processing_screen(company_id: str | None = None):
     # Same layout system as File Review / Objects / Object Detail.
     # No fixed overlay. No separate coordinate system.
+    install_processing_ghost_guard_v1_9_21()
     if st.session_state.get("processing_completed"):
         render_file_review_screen(company_id)
         return
@@ -588,7 +855,6 @@ def render_processing_screen(company_id: str | None = None):
         if st.button("Back to upload"):
             st.session_state.screen = "upload"
             st.rerun()
-
 
 def _is_empty_value(value) -> bool:
     if value is None:
