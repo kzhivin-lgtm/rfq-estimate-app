@@ -127,9 +127,9 @@ def apply_post_upload_layout_css() -> None:
 <style>
 :root {
     --post-upload-width: min(960px, calc(100vw - 56px));
-    /* v1.11.4-clean: raise shared real post-upload pages by 40px.
+    /* v1.11.4-clean2: raise shared real post-upload pages by 43px total.
        Upload screen remains centered; v1.11.3 frontend shell stays unchanged for separate sync. */
-    --post-upload-top: 48px;
+    --post-upload-top: 45px;
 }
 
 html,
